@@ -14,21 +14,19 @@
 
     @if (!isset($hideHeader))
     <header>
-        <a href="{{ url('/') }}" class="header-logo">
+        <a href="{{ url('/dashboard') }}" class="header-logo">
             <div class="brand">ntvnews<span class="id-badge">.id</span></div>
             <div class="tagline">mengawal informasi</div>
         </a>
-        <nav class="nav-links">
-            <a href="#" class="active">NEWS</a>
-            <a href="#">HIBURAN</a>
-            <a href="#">EKONOMI</a>
-            <a href="#">OLAHRAGA</a>
-            <a href="#">OTOMOTIF</a>
-            <a href="#">ASTACITA</a>
-            <a href="#">IBL</a>
+        <nav class="nav-links" id="main-nav-links">
+            <!-- Dimuat dinamis oleh JS -->
+            <a href="#">Memuat...</a>
         </nav>
         <div class="header-actions">
-            <i class="fa-solid fa-magnifying-glass"></i>
+            <form action="{{ url('/dashboard') }}" method="GET" style="display:flex; align-items:center; background:rgba(255,255,255,0.1); border-radius:20px; padding:2px 10px;">
+                <input type="text" name="q" placeholder="Cari Berita..." style="background:transparent; border:none; color:#fff; outline:none; font-size:12px; width:120px;" value="{{ request('q') }}">
+                <button type="submit" style="background:none; border:none; color:#fff; cursor:pointer;"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </form>
             <a href="{{ url('/profile') }}"><i class="fa-regular fa-user"></i></a>
             <a href="#" class="btn-live">LIVE</a>
         </div>
@@ -99,6 +97,44 @@
         if(supabaseUrl && supabaseKey) {
              supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         }
+
+        // Global Sections Map & Loader
+        window.sectionsMap = {
+            'S001': 'News',
+            'S002': 'Hiburan',
+            'S003': 'Ekonomi',
+            'S004': 'Olahraga',
+            'S005': 'Otomotif',
+            'S006': 'Astacita',
+            'S007': 'Ibl'
+        }; // Fallback statis jika database lambat
+
+        window.getSectionName = function(sectionId) {
+            return window.sectionsMap[sectionId] || sectionId || 'NEWS';
+        };
+
+        async function initGlobalLayout() {
+            if(!supabaseClient) return;
+            const { data, error } = await supabaseClient
+                .from('section')
+                .select('*')
+                .order('section_id', { ascending: true });
+
+            if(data && data.length > 0) {
+                const nav = document.getElementById('main-nav-links');
+                if(nav) {
+                    const currentPath = window.location.pathname;
+                    let html = `<a href="{{ url('/dashboard') }}" ${currentPath === '/dashboard' || currentPath === '/' ? 'class="active"' : ''}>BERANDA</a>`;
+                    data.forEach((sec) => {
+                        window.sectionsMap[sec.section_id] = sec.section_name;
+                        const isActive = currentPath.includes('/section/' + sec.section_id) ? 'class="active"' : '';
+                        html += `<a href="/section/${sec.section_id}" ${isActive}>${sec.section_name.toUpperCase()}</a>`;
+                    });
+                    nav.innerHTML = html;
+                }
+            }
+        }
+        initGlobalLayout();
     </script>
     @yield('scripts')
 </body>

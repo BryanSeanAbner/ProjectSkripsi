@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const html = `
                 <div class="breadcrumb">
-                    <div class="tag">${data.section_id || 'NEWS'}</div>
+                    <div class="tag">${window.getSectionName ? window.getSectionName(data.section_id) : data.section_id}</div>
                     <span>${dateStr}</span>
                 </div>
                 
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     <div class="author-actions">
                         <button><i class="fa-solid fa-share-nodes"></i></button>
-                        <button><i class="fa-regular fa-bookmark"></i></button>
+                        <button id="btn-bookmark"><i class="fa-regular fa-bookmark"></i></button>
                     </div>
                 </div>
 
@@ -237,6 +237,51 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
             document.getElementById('article-content').innerHTML = html;
+
+            // Fitur Bookmark
+            const btnBookmark = document.getElementById('btn-bookmark');
+            const userId = {{ session('active_user_id', Auth::id() ?? 1) }}; // Dari session
+            
+            // Cek apakah sudah di-bookmark
+            const { data: bData } = await supabaseClient
+                .from('user_bookmarks')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('article_id', articleId)
+                .single();
+
+            if (bData) {
+                btnBookmark.innerHTML = '<i class="fa-solid fa-bookmark"></i>';
+                btnBookmark.style.color = '#ffb400';
+            }
+
+            btnBookmark.addEventListener('click', async () => {
+                const { data: exist } = await supabaseClient
+                    .from('user_bookmarks')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .eq('article_id', articleId)
+                    .single();
+
+                if (exist) {
+                    await supabaseClient.from('user_bookmarks').delete().eq('user_id', userId).eq('article_id', articleId);
+                    btnBookmark.innerHTML = '<i class="fa-regular fa-bookmark"></i>';
+                    btnBookmark.style.color = '#333';
+                    alert('Dihapus dari Bookmark!');
+                } else {
+                    await supabaseClient.from('user_bookmarks').insert([{ user_id: userId, article_id: articleId }]);
+                    btnBookmark.innerHTML = '<i class="fa-solid fa-bookmark"></i>';
+                    btnBookmark.style.color = '#ffb400';
+                    alert('Berhasil disimpan ke Bookmark!');
+                }
+            });
+
+            // Simulasi catat Histori Baca (Masuk ke user_interaction saat buka artikel)
+            await supabaseClient.from('user_interaction').insert([{
+                user_id: userId,
+                article_id: articleId,
+            }]);
+
         } else {
             document.getElementById('article-content').innerHTML = `<h2>Artikel tidak ditemukan!</h2>`;
         }
@@ -251,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             .select('*')
             .eq('article_id', articleId)
             .order('rank_position', { ascending: true })
-            .limit(4);
+            .limit(5);
 
         if(similarityData && similarityData.length > 0) {
             // 2. Kumpulkan IDs
@@ -274,7 +319,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <a href="/article/${articleData.article_id}" class="cbf-card">
                             <div style="position:relative;">
                                 <img src="${articleData.photo_url || 'https://via.placeholder.com/400x250?text=Serupa'}" alt="Similar">
-                                <div class="cbf-tag">${articleData.section_id || 'NEWS'}</div>
+                                <div class="cbf-tag">${window.getSectionName ? window.getSectionName(articleData.section_id) : articleData.section_id}</div>
                             </div>
                             <h4>${articleData.title}</h4>
                         </a>

@@ -21,8 +21,12 @@ Route::get('/dashboard', function () {
 })->name('dashboard');
 
 Route::get('/article/{id}', function ($id) {
-    return view('article', compact('id'));
-})->name('article');
+    return view('article', ['id' => $id]);
+});
+
+Route::get('/section/{id}', function ($id) {
+    return view('section', ['sectionId' => $id]);
+})->name('section');
 
 Route::get('/profile', function () {
     return view('profile');

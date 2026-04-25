@@ -13,10 +13,10 @@ class User extends Authenticatable
     protected $primaryKey = 'user_id';
     public    $timestamps = true;
 
-    /** Laravel Auth menggunakan 'username' sebagai identifier login */
+    /** Laravel Auth menggunakan 'user_id' sebagai identifier sesi agar Auth::id() mengembalikan integer user_id */
     public function getAuthIdentifierName(): string
     {
-        return 'username';
+        return 'user_id';
     }
 
     protected $fillable = [

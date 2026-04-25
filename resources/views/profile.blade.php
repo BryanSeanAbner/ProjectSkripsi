@@ -50,7 +50,6 @@
             font-size: 24px;
             font-weight: 800;
             color: #e53935;
-            /* Orange/Red accent stats */
             margin-bottom: 2px;
         }
 
@@ -121,21 +120,6 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 25px;
         }
-
-        .btn-load-more {
-            display: block;
-            margin: 40px auto;
-            padding: 12px 30px;
-            background: #e8f0fe;
-            color: #1a73e8;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            letter-spacing: 0.5px;
-        }
     </style>
 @endsection
 
@@ -143,21 +127,21 @@
     <div class="profile-container">
 
         <div class="profile-header">
-            <img src="https://ui-avatars.com/api/?name=Bryan+Sean&background=170b3b&color=fff&size=120&rounded=true"
-                alt="Avatar" class="profile-avatar">
+            <img src="https://ui-avatars.com/api/?name=Loading&background=170b3b&color=fff&size=120&rounded=true"
+                alt="Avatar" class="profile-avatar" id="profile-avatar-img">
 
             <div class="profile-info">
-                <h1>{{ Auth::check() ? Auth::user()->username : 'Bryan Sean' }}</h1>
-                <p>Journalism Enthusiast & Premium Subscriber</p>
+                <h1 id="profile-username">Memuat...</h1>
+                <p id="profile-email">Memuat info...</p>
 
                 <div class="profile-stats">
                     <div class="stat-item">
-                        <h3>142</h3>
+                        <h3 id="count-saved">0</h3>
                         <span>SAVED ARTICLES</span>
                     </div>
                     <div class="stat-item">
-                        <h3>7</h3>
-                        <span>TOPICS FOLLOWED</span>
+                        <h3 id="count-history">0</h3>
+                        <span>READING HISTORY</span>
                     </div>
                 </div>
             </div>
@@ -165,17 +149,52 @@
             <button class="btn-edit-profile">Edit Profile</button>
         </div>
 
-        <div class="profile-tabs">
-            <button class="active">SAVED ARTICLES</button>
-            <button>READING HISTORY</button>
-            <button>ACCOUNT SETTINGS</button>
+        <div class="profile-tabs" id="profile-tabs">
+            <button class="active" data-target="saved">SAVED ARTICLES</button>
+            <button data-target="history">READING HISTORY</button>
+            <button data-target="settings">SETTINGS</button>
         </div>
 
+        <!-- Saved Articles Grid -->
         <div class="saved-grid" id="saved-grid">
-            <!-- Rendered by JS -->
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">Memuat Bookmark...</div>
+        </div>
+        
+        <!-- Reading History Grid -->
+        <div class="saved-grid" id="history-grid" style="display: none;">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">Memuat Histori...</div>
         </div>
 
-        <button class="btn-load-more">LOAD MORE SAVED ARTICLES</button>
+        <!-- Settings Grid -->
+        <div id="settings-grid" style="display: none; padding-bottom: 40px;">
+            <div style="background:#fff; padding:30px; border-radius:12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-width:600px; margin: 0 auto;">
+                <h2 style="font-size:20px; font-weight:800; margin-bottom:20px;">Edit Profile</h2>
+                <div style="display:flex; flex-direction:column; gap:15px;">
+                    <div>
+                        <label style="font-weight:700; font-size:12px; color:#666;">Photo Profile (URL)</label>
+                        <input type="text" id="edit-photo" placeholder="https://ui-avatars.com/api/?name=User" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <div>
+                        <label style="font-weight:700; font-size:12px; color:#666;">Username</label>
+                        <input type="text" id="edit-username" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <div>
+                        <label style="font-weight:700; font-size:12px; color:#666;">Email</label>
+                        <input type="email" id="edit-email" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <div>
+                        <label style="font-weight:700; font-size:12px; color:#666;">New Password</label>
+                        <input type="password" id="edit-password" placeholder="Kosongkan jika tidak ingin diubah" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <button id="btn-save-profile" style="background:var(--accent); color:#fff; font-weight:800; padding:12px; border:none; border-radius:6px; cursor:pointer; margin-top:10px;">Simpan Perubahan</button>
+                </div>
+
+                <hr style="margin:30px 0; border:none; border-top:1px solid #eee;">
+                
+                <h2 style="font-size:20px; font-weight:800; margin-bottom:20px; color:#e53935;">Account Actions</h2>
+                <button id="btn-logout" style="background:#e53935; color:#fff; font-weight:800; padding:12px 20px; border:none; border-radius:6px; cursor:pointer;">Logout</button>
+            </div>
+        </div>
 
     </div>
 @endsection
@@ -183,38 +202,190 @@
 @section('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            async function loadSaved() {
-                if (!supabaseClient) return;
-                // Fetch random articles for demonstration of saved list 
-                // In real app, this would query a user_saved_articles table
+            // ID User dari session Laravel (reliable untuk semua kasus login)
+            const userId = {{ session('active_user_id', Auth::id() ?? 1) }};
+
+            if (!supabaseClient) return;
+
+            // 1. Fetch User Info dari Supabase
+            async function loadUserInfo() {
                 const { data, error } = await supabaseClient
-                    .from('article')
+                    .from('users')
                     .select('*')
-                    .limit(3);
+                    .eq('user_id', userId)
+                    .single();
 
                 if (data) {
-                    let html = '';
-                    data.forEach(item => {
-                        html += `
-                        <a href="/article/${item.article_id}" class="card-sm">
-                            <img src="${item.photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News">
+                    const username = data.username || userId;
+                    document.getElementById('profile-username').innerText = username;
+                    document.getElementById('profile-email').innerText = data.email || 'user@example.com';
+                    // Check if they have a custom photo URL in DB (if column exists, otherwise fallback to avatar)
+                    const avatarUrl = data.photo_url || `https://ui-avatars.com/api/?name=${username}&background=170b3b&color=fff&size=120&rounded=true`;
+                    document.getElementById('profile-avatar-img').src = avatarUrl;
+                    
+                    // Fill Settings Inputs
+                    document.getElementById('edit-username').value = data.username || '';
+                    document.getElementById('edit-email').value = data.email || '';
+                    document.getElementById('edit-photo').value = data.photo_url || '';
+                } else {
+                    document.getElementById('profile-username').innerText = userId;
+                }
+            }
+
+            // Fungsi helper untuk merender grid card
+            function renderGrid(containerId, items, noDataMsg) {
+                const container = document.getElementById(containerId);
+                if (!items || items.length === 0) {
+                    container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">${noDataMsg}</div>`;
+                    return;
+                }
+
+                let html = '';
+                items.forEach(item => {
+                    const art = item.article;
+                    if (!art) return;
+                    html += `
+                        <a href="/article/${art.article_id}" class="card-sm">
+                            <img src="${art.photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News">
                             <div class="card-body">
-                                <div class="tag" style="background:var(--accent); color:var(--bg-primary); padding:2px 6px; border-radius:2px; font-size:10px; font-weight:800; display:inline-block; margin-bottom:8px;">${item.section_id || 'NEWS'}</div>
-                                <h3 style="font-size:16px; margin-bottom:10px;">${item.title}</h3>
-                                <p style="font-size:13px;">${item.content ? item.content.substring(0, 70) + '...' : ''}</p>
+                                <div class="tag" style="background:var(--accent); color:var(--bg-primary); padding:2px 6px; border-radius:2px; font-size:10px; font-weight:800; display:inline-block; margin-bottom:8px;">${window.getSectionName ? window.getSectionName(art.section_id) : art.section_id}</div>
+                                <h3 style="font-size:16px; margin-bottom:10px;">${art.title}</h3>
                                 <div class="card-footer" style="padding-top:10px; margin-top:auto;">
-                                    <span>${new Date(item.publish_date).toLocaleDateString()}</span>
+                                    <span>${new Date(art.publish_date || Date.now()).toLocaleDateString()}</span>
                                     <i class="fa-solid fa-bookmark" style="color:var(--accent);"></i>
                                 </div>
                             </div>
                         </a>
                     `;
+                });
+                container.innerHTML = html;
+            }
+
+            // 2. Fetch Saved Articles (Bookmarks)
+            async function loadSaved() {
+                const { data: bookmarks, error } = await supabaseClient
+                    .from('user_bookmarks')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: false });
+
+                if (bookmarks && bookmarks.length > 0) {
+                    const articleIds = bookmarks.map(b => b.article_id);
+                    const { data: articles } = await supabaseClient
+                        .from('article')
+                        .select('article_id, title, photo_url, section_id, publish_date')
+                        .in('article_id', articleIds);
+
+                    const merged = bookmarks.map(b => {
+                        return { article: articles ? articles.find(a => a.article_id === b.article_id) : null };
                     });
-                    document.getElementById('saved-grid').innerHTML = html;
+                    
+                    document.getElementById('count-saved').innerText = merged.length;
+                    renderGrid('saved-grid', merged, 'Belum ada artikel yang disimpan.');
+                } else {
+                    document.getElementById('count-saved').innerText = 0;
+                    renderGrid('saved-grid', [], 'Belum ada artikel yang disimpan. Silakan tekan tombol bookmark di halaman baca!');
                 }
             }
 
+            // 3. Fetch Reading History (Interaction)
+            async function loadHistory() {
+                const { data: history, error } = await supabaseClient
+                    .from('user_interaction')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .limit(50); // Fetch top 50 terbaru, Supabase blm support distinct in JS SDK directly easily without RPC
+
+                if (history && history.length > 0) {
+                    // Filter unique article_id agar tidak double
+                    const uniqueArticleIds = [...new Set(history.map(h => h.article_id))].slice(0, 9); // ambil 9 histori terunik terbaru
+                    
+                    const { data: articles } = await supabaseClient
+                        .from('article')
+                        .select('article_id, title, photo_url, section_id, publish_date')
+                        .in('article_id', uniqueArticleIds);
+
+                    const merged = uniqueArticleIds.map(id => {
+                        return { article: articles ? articles.find(a => a.article_id === id) : null };
+                    });
+
+                    document.getElementById('count-history').innerText = merged.length;
+                    renderGrid('history-grid', merged, 'Belum ada histori membaca.');
+                } else {
+                    document.getElementById('count-history').innerText = 0;
+                    renderGrid('history-grid', [], 'Belum ada histori membaca.');
+                }
+            }
+
+            // Tabs Logic
+            const tabs = document.querySelectorAll('#profile-tabs button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active from all
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Hide all grids
+                    document.getElementById('saved-grid').style.display = 'none';
+                    document.getElementById('history-grid').style.display = 'none';
+                    document.getElementById('settings-grid').style.display = 'none';
+
+                    // Show target
+                    const target = tab.getAttribute('data-target');
+                    const targetGrid = document.getElementById(target + '-grid');
+                    if (target === 'settings') {
+                        targetGrid.style.display = 'block';
+                    } else {
+                        targetGrid.style.display = 'grid';
+                    }
+                });
+            });
+
+            // Edit Profile Button Click
+            document.querySelector('.btn-edit-profile').addEventListener('click', () => {
+                document.querySelector('#profile-tabs button[data-target="settings"]').click();
+            });
+
+            // Save Profile Action
+            document.getElementById('btn-save-profile').addEventListener('click', async () => {
+                const username = document.getElementById('edit-username').value;
+                const email = document.getElementById('edit-email').value;
+                const photo_url = document.getElementById('edit-photo').value;
+                const password = document.getElementById('edit-password').value;
+                
+                let updateData = { username, email, photo_url };
+                if(password.trim() !== '') {
+                    updateData.password = password;
+                }
+
+                const btn = document.getElementById('btn-save-profile');
+                btn.innerText = "Menyimpan...";
+
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .update(updateData)
+                    .eq('user_id', userId);
+
+                btn.innerText = "Simpan Perubahan";
+
+                if(!error) {
+                    alert('Profile berhasil diupdate!');
+                    document.getElementById('edit-password').value = '';
+                    loadUserInfo(); // reload header info
+                } else {
+                    alert('Gagal update: ' + error.message);
+                }
+            });
+
+            // Logout Action
+            document.getElementById('btn-logout').addEventListener('click', () => {
+                window.location.href = '/login';
+            });
+
+            // Initialize
+            loadUserInfo();
             loadSaved();
+            loadHistory();
         });
     </script>
 @endsection
