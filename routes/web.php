@@ -1,0 +1,37 @@
+<?php
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RecommendationController;
+
+Route::get('/', fn() => redirect('/login'));
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+});
+
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->name('logout')
+    ->middleware('auth');
+
+// ─── Dashboard & Recommendations ────────────────────────────
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->name('dashboard');
+
+Route::get('/article/{id}', function ($id) {
+    return view('article', compact('id'));
+})->name('article');
+
+Route::get('/profile', function () {
+    return view('profile');
+})->name('profile');
+
+// API endpoints untuk Realtime fallback & manual refresh
+Route::prefix('api/recommendations')->group(function () {
+    Route::get('/data', [RecommendationController::class, 'data'])->name('recs.data');
+    Route::get('/status', [RecommendationController::class, 'status'])->name('recs.status');
+    Route::post('/regenerate', [RecommendationController::class, 'regenerate'])->name('recs.regenerate');
+});
+
