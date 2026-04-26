@@ -343,7 +343,7 @@ def save_lightgcn_recs(user_id: int, recs: list[dict]) -> None:
         })
 
     client.table("recommendation_history").insert(rows).execute()
-    print(f"[LightGCN] User {user_id} → {len(rows)} artikel ke recommendation_history.")
+    print(f"[LightGCN] User {user_id} -> {len(rows)} artikel ke recommendation_history.")
 
 
 def run(user_id: int) -> None:

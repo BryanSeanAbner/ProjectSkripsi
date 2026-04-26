@@ -21,41 +21,57 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        // Langkah 1: Coba Auth::attempt() standar (password bcrypt match)
+        // Langkah 1: Hubungi Supabase REST API untuk verifikasi user (bypassing PDO IPv6 DNS error)
+        $supabaseUrl = env('SUPABASE_URL');
+        $supabaseKey = env('SUPABASE_SERVICE_KEY', env('SUPABASE_ANON_KEY'));
+
         try {
-            if (Auth::attempt($credentials)) {
-                $request->session()->regenerate();
-                $userId = Auth::user()->user_id;
-                $request->session()->put('active_user_id', $userId);
-                GenerateRecommendationsJob::dispatch($userId);
-                return redirect()->intended('/dashboard');
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'apikey'        => $supabaseKey,
+                'Authorization' => "Bearer {$supabaseKey}",
+            ])->get("{$supabaseUrl}/rest/v1/users", [
+                'email'  => 'eq.' . $credentials['email'],
+                'select' => 'user_id,email,password'
+            ]);
+
+            if ($response->successful()) {
+                $users = $response->json();
+                if (count($users) > 0) {
+                    $userRecord = $users[0];
+                    $userId = $userRecord['user_id'];
+                    $storedPassword = $userRecord['password'];
+                    $inputPassword = $credentials['password'];
+                    
+                    // Cek apakah password cocok (Plain Text atau Bcrypt Hash)
+                    $passwordMatches = false;
+                    if ($storedPassword === $inputPassword) {
+                        $passwordMatches = true; // User baru dari /test (plain text)
+                    } elseif (\Illuminate\Support\Facades\Hash::check($inputPassword, $storedPassword)) {
+                        $passwordMatches = true; // User dari dataset original (bcrypt)
+                    }
+
+                    if ($passwordMatches) {
+                        $request->session()->regenerate();
+                        $request->session()->put('active_user_id', $userId);
+                        GenerateRecommendationsJob::dispatch($userId);
+                        return redirect()->intended('/dashboard');
+                    } else {
+                        return back()->withErrors(['email' => 'Password yang Anda masukkan salah.']);
+                    }
+                }
+            } else {
+                \Log::warning('[Login] Supabase API error: ' . $response->body());
+                return back()->withErrors(['email' => 'Gagal menghubungi server database.']);
             }
         } catch (\Exception $e) {
-            \Log::warning('[Login] Auth::attempt error: ' . $e->getMessage());
+            \Log::error('[Login] Supabase request exception: ' . $e->getMessage());
+            return back()->withErrors(['email' => 'Terjadi kesalahan sistem saat login.']);
         }
 
-        // Langkah 2: Fallback — cari user berdasarkan email, login tanpa cek password
-        // (Digunakan saat demo/dev karena password mungkin belum di-hash dengan bcrypt)
-        try {
-            $user = User::where('email', $credentials['email'])->first();
-            if ($user) {
-                Auth::login($user, false);
-                $request->session()->regenerate();
-                $userId = $user->user_id;
-                $request->session()->put('active_user_id', $userId);
-                return redirect()->intended('/dashboard');
-            }
-        } catch (\Exception $e) {
-            \Log::warning('[Login] Fallback lookup error: ' . $e->getMessage());
-        }
-
-        // Langkah 3: Fallback terakhir — izinkan masuk tapi set user_id dari input email
-        // Coba parse user_id dari email format "N@gmail.com"
-        $emailPrefix = explode('@', $credentials['email'])[0];
-        $guessedId = is_numeric($emailPrefix) ? (int)$emailPrefix : 1;
-        $request->session()->put('active_user_id', $guessedId);
-
-        return redirect()->intended('/dashboard');
+        // Jika sampai di sini berarti user tidak ditemukan di Supabase
+        return back()->withErrors([
+            'email' => 'Email tersebut belum terdaftar. Silakan daftar melalui halaman /test terlebih dahulu.',
+        ]);
     }
 
     public function logout(Request $request)

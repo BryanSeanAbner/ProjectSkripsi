@@ -11,6 +11,13 @@
         <h2>Selamat Datang Kembali</h2>
         <p class="welcome-msg">Masuk untuk melanjutkan kurasi berita Anda dan mengelola preferensi bacaan.</p>
 
+        @if($errors->any())
+            <div style="background-color: #fee2e2; color: #dc2626; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; text-align: left; border: 1px solid #fca5a5;">
+                <i class="fa-solid fa-circle-exclamation" style="margin-right: 5px;"></i>
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <form action="{{ url('/login') }}" method="POST">
             @csrf
             <div class="form-group">

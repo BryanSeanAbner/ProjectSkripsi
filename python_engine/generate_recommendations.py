@@ -24,6 +24,10 @@ def main():
     args = parser.parse_args()
 
     user_id = args.user_id
+    generate_for_user(user_id)
+
+
+def generate_for_user(user_id: int):
     print(f"\n{'='*50}")
     print(f" Generating recommendations for user_id = {user_id}")
     print(f"{'='*50}\n")

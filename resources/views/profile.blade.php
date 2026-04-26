@@ -161,8 +161,15 @@
         </div>
         
         <!-- Reading History Grid -->
-        <div class="saved-grid" id="history-grid" style="display: none;">
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">Memuat Histori...</div>
+        <div id="history-container" style="display: none;">
+            <div class="saved-grid" id="history-grid">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">Memuat Histori...</div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <button id="btn-load-more-history" style="display: none; background: #f0f0f0; color: #333; font-weight: 700; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;">
+                    Lihat Histori Lainnya <i class="fa-solid fa-angle-down"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Settings Grid -->
@@ -233,10 +240,12 @@
             }
 
             // Fungsi helper untuk merender grid card
-            function renderGrid(containerId, items, noDataMsg) {
+            function renderGrid(containerId, items, noDataMsg, append = false) {
                 const container = document.getElementById(containerId);
                 if (!items || items.length === 0) {
-                    container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">${noDataMsg}</div>`;
+                    if (!append) {
+                        container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">${noDataMsg}</div>`;
+                    }
                     return;
                 }
 
@@ -252,13 +261,17 @@
                                 <h3 style="font-size:16px; margin-bottom:10px;">${art.title}</h3>
                                 <div class="card-footer" style="padding-top:10px; margin-top:auto;">
                                     <span>${new Date(art.publish_date || Date.now()).toLocaleDateString()}</span>
-                                    <i class="fa-solid fa-bookmark" style="color:var(--accent);"></i>
+                                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted);"></i>
                                 </div>
                             </div>
                         </a>
                     `;
                 });
-                container.innerHTML = html;
+                if (append) {
+                    container.innerHTML += html;
+                } else {
+                    container.innerHTML = html;
+                }
             }
 
             // 2. Fetch Saved Articles (Bookmarks)
@@ -289,33 +302,74 @@
             }
 
             // 3. Fetch Reading History (Interaction)
+            let allUniqueHistoryIds = [];
+            let currentHistoryPage = 0;
+            const historyPerPage = 9;
+
             async function loadHistory() {
+                // Fetch ALL interactions for the user to get the true total count
                 const { data: history, error } = await supabaseClient
                     .from('user_interaction')
-                    .select('*')
+                    .select('article_id')
                     .eq('user_id', userId)
-                    .limit(50); // Fetch top 50 terbaru, Supabase blm support distinct in JS SDK directly easily without RPC
+                    .order('interaction_id', { ascending: false });
 
                 if (history && history.length > 0) {
                     // Filter unique article_id agar tidak double
-                    const uniqueArticleIds = [...new Set(history.map(h => h.article_id))].slice(0, 9); // ambil 9 histori terunik terbaru
+                    allUniqueHistoryIds = [...new Set(history.map(h => h.article_id))];
                     
-                    const { data: articles } = await supabaseClient
-                        .from('article')
-                        .select('article_id, title, photo_url, section_id, publish_date')
-                        .in('article_id', uniqueArticleIds);
-
-                    const merged = uniqueArticleIds.map(id => {
-                        return { article: articles ? articles.find(a => a.article_id === id) : null };
-                    });
-
-                    document.getElementById('count-history').innerText = merged.length;
-                    renderGrid('history-grid', merged, 'Belum ada histori membaca.');
+                    // Set total count di header
+                    document.getElementById('count-history').innerText = allUniqueHistoryIds.length;
+                    
+                    // Bersihkan grid
+                    document.getElementById('history-grid').innerHTML = '';
+                    currentHistoryPage = 0;
+                    
+                    // Load halaman pertama
+                    await loadHistoryPage();
                 } else {
                     document.getElementById('count-history').innerText = 0;
                     renderGrid('history-grid', [], 'Belum ada histori membaca.');
                 }
             }
+
+            async function loadHistoryPage() {
+                const startIdx = currentHistoryPage * historyPerPage;
+                const endIdx = startIdx + historyPerPage;
+                const pageIds = allUniqueHistoryIds.slice(startIdx, endIdx);
+                
+                if (pageIds.length === 0) return;
+
+                const { data: articles } = await supabaseClient
+                    .from('article')
+                    .select('article_id, title, photo_url, section_id, publish_date')
+                    .in('article_id', pageIds);
+
+                const merged = pageIds.map(id => {
+                    return { article: articles ? articles.find(a => a.article_id === id) : null };
+                }).filter(m => m.article !== null);
+
+                // Tambahkan (append) ke grid, bukan me-replace
+                const isFirstPage = currentHistoryPage === 0;
+                renderGrid('history-grid', merged, 'Belum ada histori membaca.', !isFirstPage);
+                
+                currentHistoryPage++;
+                
+                // Tampilkan atau sembunyikan tombol Load More
+                const btnLoadMore = document.getElementById('btn-load-more-history');
+                if (currentHistoryPage * historyPerPage >= allUniqueHistoryIds.length) {
+                    btnLoadMore.style.display = 'none';
+                } else {
+                    btnLoadMore.style.display = 'inline-block';
+                }
+            }
+
+            document.getElementById('btn-load-more-history').addEventListener('click', async function() {
+                const prevText = this.innerHTML;
+                this.innerHTML = 'Memuat...';
+                await loadHistoryPage();
+                this.innerHTML = prevText;
+            });
 
             // Tabs Logic
             const tabs = document.querySelectorAll('#profile-tabs button');
@@ -327,16 +381,17 @@
 
                     // Hide all grids
                     document.getElementById('saved-grid').style.display = 'none';
-                    document.getElementById('history-grid').style.display = 'none';
+                    document.getElementById('history-container').style.display = 'none';
                     document.getElementById('settings-grid').style.display = 'none';
 
                     // Show target
                     const target = tab.getAttribute('data-target');
-                    const targetGrid = document.getElementById(target + '-grid');
-                    if (target === 'settings') {
-                        targetGrid.style.display = 'block';
+                    if (target === 'history') {
+                        document.getElementById('history-container').style.display = 'block';
+                    } else if (target === 'settings') {
+                        document.getElementById('settings-grid').style.display = 'block';
                     } else {
-                        targetGrid.style.display = 'grid';
+                        document.getElementById(target + '-grid').style.display = 'grid';
                     }
                 });
             });

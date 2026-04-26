@@ -9,10 +9,13 @@ import os
 import time
 import argparse
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pandas as pd
+from config import TRAIN_CSV
 
+import train_popularity
 import train_cbf
 import train_lightgcn
+import generate_recommendations
 
 def main():
     parser = argparse.ArgumentParser()
@@ -38,8 +41,19 @@ def main():
 
     print()
 
-    # 2. LightGCN
-    print(">>> [2/2] LightGCN...")
+    # 1.5 Popularity Evaluation
+    print(">>> [2/3] Popularity-Based Filtering Evaluation...")
+    t0 = time.time()
+    try:
+        train_popularity.train()
+        print(f"    [OK] Popularity selesai dalam {time.time()-t0:.1f}s")
+    except Exception as e:
+        print(f"    [X] ERROR: {e}")
+
+    print()
+
+    # 3. LightGCN
+    print(">>> [3/3] LightGCN...")
     t0 = time.time()
     try:
         train_lightgcn.train(epochs=args.epochs, embedding_dim=args.embedding_dim, num_layers=args.num_layers)
@@ -47,8 +61,24 @@ def main():
     except Exception as e:
         print(f"    [X] ERROR: {e}")
 
+    # 4. Auto-Generate Demo Users
+    print("\n>>> [4/4] Auto-Generate Rekomendasi (User ID 1 sampai 20)...")
+    t0 = time.time()
+    try:
+        # Generate secara spesifik untuk User ID 1 sampai 20
+        demo_users = list(range(1, 21))
+        
+        print(f"    Mulai generate & simpan ke Supabase untuk {len(demo_users)} user...")
+        for idx, uid in enumerate(demo_users, 1):
+            print(f"    -> Progress: {idx}/{len(demo_users)} (User ID: {int(uid)})")
+            generate_recommendations.generate_for_user(int(uid))
+            
+        print(f"    [OK] Auto-Generate Selesai dalam {time.time()-t0:.1f}s")
+    except Exception as e:
+        print(f"    [X] ERROR Auto-Generate: {e}")
+
     print("\n" + "="*60)
-    print("  TRAINING COMPLETE — Model weights tersimpan di saved_models/")
+    print("  TRAINING & AUTO-INFERENCE COMPLETE — Model weights tersimpan di saved_models/")
     print("="*60 + "\n")
 
 if __name__ == "__main__":

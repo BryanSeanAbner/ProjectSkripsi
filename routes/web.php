@@ -32,6 +32,10 @@ Route::get('/profile', function () {
     return view('profile');
 })->name('profile');
 
+// ─── Test / Demo Pipeline ─────────────────────────────────────────────────────
+Route::get('/test',  [\App\Http\Controllers\TestController::class, 'index'])->name('test');
+Route::post('/test/train', [\App\Http\Controllers\TestController::class, 'train'])->name('test.train');
+
 // API endpoints untuk Realtime fallback & manual refresh
 Route::prefix('api/recommendations')->group(function () {
     Route::get('/data', [RecommendationController::class, 'data'])->name('recs.data');
