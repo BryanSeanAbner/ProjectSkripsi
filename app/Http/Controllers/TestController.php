@@ -9,18 +9,18 @@ use Illuminate\Support\Facades\Log;
 class TestController extends Controller
 {
     /**
-     * Tampilkan halaman /test
+     * Tampilkan halaman /register
      */
     public function index()
     {
-        return view('test');
+        return view('register');
     }
 
     /**
      * Simpan interaksi artikel user baru ke tabel user_interaction,
-     * lalu jalankan Python pipeline dan redirect ke /dashboard.
+     * lalu jalankan Python pipeline dan redirect ke /homepage.
      *
-     * POST /test/train
+     * POST /register/train
      * Body JSON: { "user_id": 3050, "article_ids": [101, 205, 310] }
      */
     public function train(Request $request)
@@ -39,22 +39,48 @@ class TestController extends Controller
         $scriptPath  = base_path('python_engine/test_new_user_pipeline.py');
         $logPath     = storage_path('logs/test_pipeline_' . $userId . '.log');
 
-        $cmd = escapeshellarg($pythonPath) . ' ' .
+        // -u = unbuffered Python output
+        $cmd = escapeshellarg($pythonPath) . ' -u ' .
                escapeshellarg($scriptPath) . ' ' .
                '--user_id ' . $userId .
-               ' > ' . escapeshellarg($logPath) . ' 2>&1';
+               ' 2>&1';
 
-        Log::info("[TestController] Menjalankan: python test_new_user_pipeline.py --user_id {$userId}");
+        Log::info("[Register] Menjalankan: python test_new_user_pipeline.py --user_id {$userId}");
 
-        // Jalankan dan tunggu hingga selesai (blocking)
-        $returnCode = null;
-        exec($cmd, $output, $returnCode);
+        // Tulis header ke terminal (STDERR agar muncul di php artisan serve)
+        $stderr = fopen('php://stderr', 'w');
+        fwrite($stderr, "\n" . str_repeat('=', 60) . "\n");
+        fwrite($stderr, "  [Register] Pipeline dimulai — User ID: {$userId}\n");
+        fwrite($stderr, str_repeat('=', 60) . "\n");
 
-        $logContent = file_exists($logPath) ? file_get_contents($logPath) : '';
-        Log::info("[TestController] Pipeline exit code: {$returnCode}\n{$logContent}");
+        // Jalankan dengan popen agar output muncul REAL-TIME di terminal
+        $handle = popen($cmd, 'r');
+        $logContent = '';
+
+        if ($handle) {
+            while (!feof($handle)) {
+                $line = fgets($handle);
+                if ($line !== false) {
+                    $logContent .= $line;
+                    fwrite($stderr, "  [Python] " . rtrim($line) . "\n");
+                    fflush($stderr);
+                }
+            }
+            $returnCode = pclose($handle);
+        } else {
+            $returnCode = -1;
+            fwrite($stderr, "  [ERROR] Gagal menjalankan Python!\n");
+        }
+
+        fwrite($stderr, "\n  [Register] Pipeline selesai — exit code: {$returnCode}\n");
+        fwrite($stderr, str_repeat('=', 60) . "\n\n");
+        fclose($stderr);
+
+        // Simpan log ke file
+        file_put_contents($logPath, $logContent);
+        Log::info("[Register] Pipeline exit code: {$returnCode}");
 
         if ($returnCode !== 0) {
-            // Clean invalid UTF-8 characters that could break json_encode
             $safeLog = mb_convert_encoding($logContent, 'UTF-8', 'UTF-8');
             return response()->json([
                 'error'  => 'Training gagal. Lihat log untuk detail.',
@@ -62,7 +88,7 @@ class TestController extends Controller
             ], 500);
         }
 
-        // 3. Set session agar dashboard tahu siapa yang login
+        // 3. Set session agar homepage tahu siapa yang login
         $request->session()->put('active_user_id', $userId);
 
         return response()->json(['success' => true, 'user_id' => $userId]);

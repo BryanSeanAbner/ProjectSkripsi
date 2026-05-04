@@ -45,7 +45,7 @@ class AuthController extends Controller
                     // Cek apakah password cocok (Plain Text atau Bcrypt Hash)
                     $passwordMatches = false;
                     if ($storedPassword === $inputPassword) {
-                        $passwordMatches = true; // User baru dari /test (plain text)
+                        $passwordMatches = true; // User baru dari /register (plain text)
                     } elseif (\Illuminate\Support\Facades\Hash::check($inputPassword, $storedPassword)) {
                         $passwordMatches = true; // User dari dataset original (bcrypt)
                     }
@@ -54,7 +54,7 @@ class AuthController extends Controller
                         $request->session()->regenerate();
                         $request->session()->put('active_user_id', $userId);
                         GenerateRecommendationsJob::dispatch($userId);
-                        return redirect()->intended('/dashboard');
+                        return redirect()->intended('/homepage');
                     } else {
                         return back()->withErrors(['email' => 'Password yang Anda masukkan salah.']);
                     }
@@ -70,7 +70,7 @@ class AuthController extends Controller
 
         // Jika sampai di sini berarti user tidak ditemukan di Supabase
         return back()->withErrors([
-            'email' => 'Email tersebut belum terdaftar. Silakan daftar melalui halaman /test terlebih dahulu.',
+            'email' => 'Email tersebut belum terdaftar. Silakan daftar melalui halaman /register terlebih dahulu.',
         ]);
     }
 

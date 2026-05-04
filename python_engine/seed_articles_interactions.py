@@ -20,10 +20,22 @@ def seed_all():
     sections = df_art['section_id'].dropna().unique()
     print(f"Ditemukan {len(sections)} sections unik. Menyisipkan ke tabel 'section'...")
     
+    # Mapping section_id -> section_name
+    section_names = {
+        'S001': 'News',
+        'S002': 'Hiburan',
+        'S003': 'Ekonomi',
+        'S004': 'Olahraga',
+        'S005': 'Otomotif',
+        'S006': 'Astacita',
+        'S007': 'Ibl'
+    }
+    
     sec_rows = []
     for sid in sections:
         sec_rows.append({
-            "section_id": str(sid)
+            "section_id": str(sid),
+            "section_name": section_names.get(str(sid), str(sid))
         })
     
     # Upsert sections

@@ -10,7 +10,7 @@ import time
 import argparse
 
 import pandas as pd
-from config import TRAIN_CSV
+from config import INTERACTIONS_CSV
 
 import train_popularity
 import train_cbf
@@ -30,30 +30,20 @@ def main():
 
     print(f"[Config] LightGCN Epochs: {args.epochs}, Emb_Dim: {args.embedding_dim}, Layers: {args.num_layers}\n")
 
-    # 1. CBF
-    print(">>> [1/2] Content-Based Filtering (TF-IDF)...")
+    # 1. CBF — Train + Generate Similarity untuk SEMUA artikel
+    print(">>> [1/3] Content-Based Filtering (TF-IDF)...")
     t0 = time.time()
     try:
         train_cbf.train()
+        train_cbf.generate_all_article_similarities()
         print(f"    [OK] CBF selesai dalam {time.time()-t0:.1f}s")
     except Exception as e:
         print(f"    [X] ERROR: {e}")
 
     print()
 
-    # 1.5 Popularity Evaluation
-    print(">>> [2/3] Popularity-Based Filtering Evaluation...")
-    t0 = time.time()
-    try:
-        train_popularity.train()
-        print(f"    [OK] Popularity selesai dalam {time.time()-t0:.1f}s")
-    except Exception as e:
-        print(f"    [X] ERROR: {e}")
-
-    print()
-
-    # 3. LightGCN
-    print(">>> [3/3] LightGCN...")
+    # 2. LightGCN
+    print(">>> [2/3] LightGCN...")
     t0 = time.time()
     try:
         train_lightgcn.train(epochs=args.epochs, embedding_dim=args.embedding_dim, num_layers=args.num_layers)

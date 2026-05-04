@@ -409,7 +409,10 @@
                                     <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${window.getSectionName ? window.getSectionName(art.section_id) : art.section_id}</div>
                                     <h3 style="font-size:16px; margin-bottom:8px;">${art.title}</h3>
                                     <p style="font-size:13px; color:#666; margin-bottom:10px;">${art.content ? art.content.substring(0, 150) + '...' : ''}</p>
-                                    <div style="font-size:11px; color:#999; margin-top:auto;">${new Date(art.publish_date).toLocaleDateString()}</div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
+                                        <span>${new Date(art.publish_date).toLocaleDateString()}</span>
+                                        <span><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</span>
+                                    </div>
                                 </div>
                             </a>
                         `;
@@ -444,7 +447,10 @@
                             <div class="tag">${getSecName(hero.section_id)}</div>
                             <h1>${hero.title}</h1>
                             <p>${hero.content ? hero.content.substring(0, 100) + '...' : ''}</p>
-                            <div class="meta">${new Date(hero.publish_date).toLocaleDateString()}</div>
+                            <div class="meta" style="display:flex; gap:15px; align-items:center;">
+                                <span>${new Date(hero.publish_date).toLocaleDateString()}</span>
+                                <span><i class="fa-regular fa-eye"></i> ${hero.view_count || 0}</span>
+                            </div>
                         </div>
                     </a>
                 `;
@@ -461,7 +467,7 @@
                                     <h3>${data[i].title}</h3>
                                     <div class="card-footer">
                                         <span>${new Date(data[i].publish_date).toLocaleDateString()}</span>
-                                        <i class="fa-regular fa-bookmark"></i>
+                                        <span><i class="fa-regular fa-eye"></i> ${data[i].view_count || 0}</span>
                                     </div>
                                 </div>
                             </a>
@@ -481,7 +487,10 @@
                                     <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${getSecName(data[i].section_id)}</div>
                                     <h3 style="font-size:16px; margin-bottom:8px;">${data[i].title}</h3>
                                     <p style="font-size:13px; color:#666; margin-bottom:10px;">${data[i].content ? data[i].content.substring(0, 80) + '...' : ''}</p>
-                                    <div style="font-size:11px; color:#999; margin-top:auto;">${new Date(data[i].publish_date).toLocaleDateString()}</div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
+                                        <span>${new Date(data[i].publish_date).toLocaleDateString()}</span>
+                                        <span><i class="fa-regular fa-eye"></i> ${data[i].view_count || 0}</span>
+                                    </div>
                                 </div>
                             </a>
                         `;
@@ -505,7 +514,7 @@
                     const articleIds = populars.map(p => p.article_id);
                     const { data: articles, error: artError } = await supabaseClient
                         .from('article')
-                        .select('article_id, title, section_id')
+                        .select('article_id, title, section_id, view_count')
                         .in('article_id', articleIds);
 
                     if (articles) {
@@ -521,6 +530,7 @@
                                 <div class="details">
                                     <div class="tag">${badge}</div>
                                     <h4>${art.title}</h4>
+                                    <div style="font-size:11px; color:#999; margin-top:4px;"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
                                 </div>
                             </a>
                         `;
@@ -544,7 +554,7 @@
                     const articleIds = recs.map(r => r.article_id);
                     const { data: articles, error: artError } = await supabaseClient
                         .from('article')
-                        .select('article_id, title, content, photo_url, section_id')
+                        .select('article_id, title, content, photo_url, section_id, view_count')
                         .in('article_id', articleIds);
 
                     if (articles) {
@@ -561,6 +571,7 @@
                                     <img src="${art.photo_url || 'https://via.placeholder.com/400x250?text=Recs'}" alt="Rec">
                                     <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${badge}</div>
                                     <h4 style="font-size:15px; font-weight:700;">${art.title}</h4>
+                                    <div style="font-size:11px; color:#999; margin-top:5px;"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
                                 </a>
                             `;
                             } else {
@@ -569,6 +580,7 @@
                                     <div style="flex:1;">
                                         <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${badge}</div>
                                         <h4 style="font-size:13px; line-height:1.4; font-weight:600;">${art.title}</h4>
+                                        <div style="font-size:11px; color:#999; margin-top:4px;"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
                                     </div>
                                 </a>
                             `;
@@ -619,7 +631,10 @@
                                         <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${getSecName(art.section_id)}</div>
                                         <h3 style="font-size:16px; margin-bottom:8px;">${art.title}</h3>
                                         <p style="font-size:13px; color:#666; margin-bottom:10px;">${art.content ? art.content.substring(0, 80) + '...' : ''}</p>
-                                        <div style="font-size:11px; color:#999; margin-top:auto;">${new Date(art.publish_date).toLocaleDateString()}</div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
+                                            <span>${new Date(art.publish_date).toLocaleDateString()}</span>
+                                            <span><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</span>
+                                        </div>
                                     </div>
                                 </a>
                             `;

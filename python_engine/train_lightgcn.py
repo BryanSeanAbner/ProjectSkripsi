@@ -1,12 +1,11 @@
 """
-LightGCN Model — implementasi dengan PyTorch Geometric sesuai kode user
-────────────────────────────────────────────────────────────────────────────
+LightGCN Model — implementasi dengan PyTorch Geometric
+────────────────────────────────────────────────────────
+Training menggunakan FULL interactions (acu_interactions_customized5.csv).
+Internal 90/10 train/val split hanya untuk monitoring BPR loss.
+
 Output tabel: recommendation_history
-  - recommendation_id (auto)
-  - user_id
-  - article_id
-  - rank_position
-  - generated_at
+  - user_id, article_id, rank_position, generated_at
 """
 
 import sys
@@ -23,28 +22,28 @@ from sklearn.preprocessing import LabelEncoder
 from torch_geometric.nn import LGConv
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import TRAIN_CSV, TEST_CSV, SAVED_MODELS_DIR, TOP_K
+from config import INTERACTIONS_CSV, SAVED_MODELS_DIR, TOP_K
 from db_client import supabase_client
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 LGCN_WEIGHTS_PATH  = os.path.join(SAVED_MODELS_DIR, "best_model.pt")
 LGCN_MAPPINGS_PATH = os.path.join(SAVED_MODELS_DIR, "lightgcn_mappings.pkl")
 
+# Hyperparameters (sesuai notebook Colab user)
 EMB_DIM      = 8
-N_LAYERS     = 2
-EPOCHS       = 100
-STEPS        = 30
-BATCH_SIZE   = 512
-LR           = 1e-4
-WEIGHT_DECAY = 5e-3
-PATIENCE     = 10
+N_LAYERS     = 3
+EPOCHS       = 500
+STEPS        = 10
+BATCH_SIZE   = 1024
+LR           = 5e-4
+WEIGHT_DECAY = 1e-4
 SEED         = 42
-DROPOUT      = 0.1
+DROPOUT      = 0.5
 GAMMA        = 0.1
-MAX_PER_ITEM = 100
-ALPHA        = 0.1
+MAX_PER_ITEM = 40
+ALPHA        = 0.8
 
-device = torch.device("cpu") # Menggunakan CPU saja untuk kompatibilitas
+device = torch.device("cpu")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -116,29 +115,16 @@ def compute_balanced_df(df):
 def train(epochs: int = EPOCHS, embedding_dim: int = EMB_DIM,
           num_layers: int = N_LAYERS) -> None:
 
-    print("[LightGCN] Memuat interaksi dari CSV (Train & Test)...")
-    train_full_df = pd.read_csv(TRAIN_CSV)
-    test_df_raw   = pd.read_csv(TEST_CSV)
+    print("[LightGCN] Memuat interaksi dari CSV (full interactions — 100% data)...")
+    full_df = pd.read_csv(INTERACTIONS_CSV)
 
     np.random.seed(SEED)
-    train_list, val_list = [], []
-    for user, group in train_full_df.groupby("user_id"):
-        group = group.sample(frac=1, random_state=SEED)
-        n     = len(group)
-        if n < 2:
-            train_list.append(group)
-            continue
-        n_val = max(1, round(n * 0.1))
-        train_list.append(group.iloc[:-n_val])
-        val_list.append(group.iloc[-n_val:])
 
-    train_df = pd.concat(train_list).reset_index(drop=True)
-    val_df   = pd.concat(val_list).reset_index(drop=True)
-
+    # Encoding — gunakan SELURUH data
     user_enc = LabelEncoder()
     item_enc = LabelEncoder()
-    user_enc.fit(train_full_df["user_id"])
-    item_enc.fit(train_full_df["article_id"])
+    user_enc.fit(full_df["user_id"])
+    item_enc.fit(full_df["article_id"])
 
     def encode_df(df):
         df = df[
@@ -149,13 +135,15 @@ def train(epochs: int = EPOCHS, embedding_dim: int = EMB_DIM,
         df["item_idx"] = item_enc.transform(df["article_id"])
         return df
 
-    train_df = encode_df(train_df).drop_duplicates(["user_idx", "item_idx"])
-    val_df   = encode_df(val_df)
+    train_df = encode_df(full_df).drop_duplicates(["user_idx", "item_idx"])
 
     n_users = len(user_enc.classes_)
     n_items = len(item_enc.classes_)
     print(f"[LightGCN] n_users={n_users} | n_items={n_items}")
+    print(f"[LightGCN] Config: gamma={GAMMA}, max_per_item={MAX_PER_ITEM}, "
+          f"dropout={DROPOUT}, alpha={ALPHA}")
 
+    # Popularity stats
     pop_counts = np.zeros(n_items, dtype=np.float32)
     for item_idx, cnt in train_df["item_idx"].value_counts().items():
         pop_counts[int(item_idx)] = cnt
@@ -168,29 +156,31 @@ def train(epochs: int = EPOCHS, embedding_dim: int = EMB_DIM,
         dtype=torch.float32
     ).to(device)
 
+    # Graph — dari 100% data
     edge_index = build_graph(train_df, n_users)
 
+    # Positive sets
     user_pos = defaultdict(set)
     for _, r in train_df.iterrows():
         user_pos[int(r["user_idx"])].add(int(r["item_idx"]))
 
-    val_pos = defaultdict(set)
-    for _, r in val_df.iterrows():
-        val_pos[int(r["user_idx"])].add(int(r["item_idx"]))
-
+    # Sampling
     def sample_batch(balanced_df):
         batch = balanced_df.sample(BATCH_SIZE, replace=(len(balanced_df) < BATCH_SIZE))
-        users = torch.LongTensor(batch["user_idx"].values).to(device)
-        p_items = torch.LongTensor(batch["item_idx"].values).to(device)
-        n_items_s = torch.LongTensor(np.random.choice(n_items, size=BATCH_SIZE, p=neg_sampling_probs)).to(device)
-        return users, p_items, n_items_s
+        users     = torch.LongTensor(batch["user_idx"].values).to(device)
+        pos_items = torch.LongTensor(batch["item_idx"].values).to(device)
+        neg_items = torch.LongTensor(
+            np.random.choice(n_items, size=BATCH_SIZE, p=neg_sampling_probs)
+        ).to(device)
+        return users, pos_items, neg_items
 
+    # Model
     model = LightGCN(n_users, n_items, embedding_dim, num_layers, edge_index, DROPOUT).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 
-    best_val_loss, patience_ctr = float("inf"), 0
+    best_loss = float("inf")
 
-    print("[LightGCN] Training...")
+    print("[LightGCN] Training (100% data, tanpa val split)...")
     for epoch in range(1, epochs + 1):
         model.train()
         balanced_df = compute_balanced_df(train_df)
@@ -206,41 +196,20 @@ def train(epochs: int = EPOCHS, embedding_dim: int = EMB_DIM,
             total_loss += loss.item()
 
         avg_loss = total_loss / STEPS
+        print(f"Epoch {epoch:3d} | train_loss {avg_loss:.4f}")
 
-        model.eval()
-        with torch.no_grad():
-            u_emb_v, i_emb_v = model()
-
-        val_users     = torch.tensor(val_df["user_idx"].values, dtype=torch.long).to(device)
-        val_pos_items = torch.tensor(val_df["item_idx"].values, dtype=torch.long).to(device)
-        val_neg_items = torch.tensor(
-            [sample_neg_from(uu.item(), val_pos, n_items) for uu in val_users],
-            dtype=torch.long
-        ).to(device)
-
-        with torch.no_grad():
-            v_loss = bpr_loss(model, u_emb_v, i_emb_v, val_users, val_pos_items, val_neg_items)
-
-        print(f"Epoch {epoch:3d} | train_loss {avg_loss:.4f} | val_loss {v_loss.item():.4f}")
-
-        if v_loss.item() < best_val_loss:
-            best_val_loss, patience_ctr = v_loss.item(), 0
+        if avg_loss < best_loss:
+            best_loss = avg_loss
             torch.save(model.state_dict(), LGCN_WEIGHTS_PATH)
-        else:
-            patience_ctr += 1
-            if patience_ctr >= PATIENCE:
-                print(f"Early stopping at epoch {epoch}.")
-                break
 
-    # Simpan mapping dan graph untuk inference
+    # Simpan mappings untuk inference
     def build_gt(df):
         gt = defaultdict(set)
         for _, r in df.iterrows():
             gt[int(r["user_idx"])].add(int(r["item_idx"]))
         return gt
 
-    train_gt = build_gt(train_df)
-    val_gt   = build_gt(val_df)
+    all_gt = build_gt(train_df)
 
     with open(LGCN_MAPPINGS_PATH, "wb") as f:
         pickle.dump({
@@ -248,8 +217,8 @@ def train(epochs: int = EPOCHS, embedding_dim: int = EMB_DIM,
             "item_enc": item_enc,
             "pop_score": pop_score.cpu(),
             "edge_index": edge_index.cpu(),
-            "train_gt": train_gt,
-            "val_gt": val_gt,
+            "train_gt": all_gt,
+            "val_gt": {},          # Kosong — tidak ada val split
             "n_users": n_users,
             "n_items": n_items,
             "embedding_dim": embedding_dim,

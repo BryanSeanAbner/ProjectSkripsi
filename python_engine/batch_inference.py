@@ -6,7 +6,7 @@ import torch
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import TRAIN_CSV, ARTICLE_CSV, TOP_K
+from config import INTERACTIONS_CSV, ARTICLE_CSV, TOP_K
 from db_client import supabase_client
 import train_popularity
 import train_lightgcn
@@ -21,8 +21,8 @@ def main():
     print("=========================================\n")
 
     # Load shared data
-    train_df = pd.read_csv(TRAIN_CSV)
-    unique_users = train_df['user_id'].unique()
+    interactions_df = pd.read_csv(INTERACTIONS_CSV)
+    unique_users = interactions_df['user_id'].unique()
     n_users = len(unique_users)
 
     # ---------------------------------------------------------
@@ -32,7 +32,7 @@ def main():
     pop_df = train_popularity.get_popular_articles()
     # Pre-cache user history
     user_seen_dict = (
-        train_df.groupby("user_id")["article_id"]
+        interactions_df.groupby("user_id")["article_id"]
         .apply(set).to_dict()
     )
 

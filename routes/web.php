@@ -15,10 +15,10 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout')
     ->middleware('auth');
 
-// ─── Dashboard & Recommendations ────────────────────────────
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
+// ─── Homepage & Recommendations ────────────────────────────
+Route::get('/homepage', function () {
+    return view('homepage');
+})->name('homepage');
 
 Route::get('/article/{id}', function ($id) {
     return view('article', ['id' => $id]);
@@ -32,9 +32,9 @@ Route::get('/profile', function () {
     return view('profile');
 })->name('profile');
 
-// ─── Test / Demo Pipeline ─────────────────────────────────────────────────────
-Route::get('/test',  [\App\Http\Controllers\TestController::class, 'index'])->name('test');
-Route::post('/test/train', [\App\Http\Controllers\TestController::class, 'train'])->name('test.train');
+// ─── Register / Demo Pipeline ────────────────────────────────────────────────
+Route::get('/register',  [\App\Http\Controllers\TestController::class, 'index'])->name('register');
+Route::post('/register/train', [\App\Http\Controllers\TestController::class, 'train'])->name('register.train');
 
 // API endpoints untuk Realtime fallback & manual refresh
 Route::prefix('api/recommendations')->group(function () {

@@ -14,7 +14,7 @@
 
     @if (!isset($hideHeader))
     <header>
-        <a href="{{ url('/dashboard') }}" class="header-logo">
+        <a href="{{ url('/homepage') }}" class="header-logo">
             <div class="brand">ntvnews<span class="id-badge">.id</span></div>
             <div class="tagline">mengawal informasi</div>
         </a>
@@ -23,7 +23,7 @@
             <a href="#">Memuat...</a>
         </nav>
         <div class="header-actions">
-            <form action="{{ url('/dashboard') }}" method="GET" style="display:flex; align-items:center; background:rgba(255,255,255,0.1); border-radius:20px; padding:2px 10px;">
+            <form action="{{ url('/homepage') }}" method="GET" style="display:flex; align-items:center; background:rgba(255,255,255,0.1); border-radius:20px; padding:2px 10px;">
                 <input type="text" name="q" placeholder="Cari Berita..." style="background:transparent; border:none; color:#fff; outline:none; font-size:12px; width:120px;" value="{{ request('q') }}">
                 <button type="submit" style="background:none; border:none; color:#fff; cursor:pointer;"><i class="fa-solid fa-magnifying-glass"></i></button>
             </form>
@@ -124,7 +124,7 @@
                 const nav = document.getElementById('main-nav-links');
                 if(nav) {
                     const currentPath = window.location.pathname;
-                    let html = `<a href="{{ url('/dashboard') }}" ${currentPath === '/dashboard' || currentPath === '/' ? 'class="active"' : ''}>BERANDA</a>`;
+                    let html = `<a href="{{ url('/homepage') }}" ${currentPath === '/homepage' || currentPath === '/' ? 'class="active"' : ''}>BERANDA</a>`;
                     data.forEach((sec) => {
                         window.sectionsMap[sec.section_id] = sec.section_name;
                         const isActive = currentPath.includes('/section/' + sec.section_id) ? 'class="active"' : '';

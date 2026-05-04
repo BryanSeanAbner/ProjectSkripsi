@@ -20,9 +20,9 @@ def seed_users():
     batch_size = 200
     rows = []
     
-    # bcrypt('1') hash used by Laravel: $2y$12$KkQoD.c3Q.N5.M43A0/pQ.S5b1Q5d9yZ754A.1d95.p/Y1...
-    # For now, let's just insert '1' or pre-hashed. Let's use a standard Laravel hash for '1'.
-    laravel_hash_for_1 = "$2y$12$R.S24E1g0tI806P0K8r5v.S6F/mZ6P1Y4C9K/i0R3k7kC/K7s3y."
+    # Password disimpan plain text. AuthController sudah mendukung
+    # pencocokan plain text ($storedPassword === $inputPassword).
+    default_password = "1"
     
     import random
     genders = ['M', 'F']
@@ -35,7 +35,7 @@ def seed_users():
             "user_id": uid_int,
             "username": str(uid_int),
             "email": f"{uid_int}@gmail.com",
-            "password": laravel_hash_for_1,
+            "password": default_password,
             "gender": random.choice(genders),
             "age": random.randint(18, 60)
         })

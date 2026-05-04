@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Dokumentasi Sistem Rekomendasi Berita — ProjectTA</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    line-height: 1.7;
+    color: #1a1a2e;
+    background: #fff;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 50px;
+    font-size: 14px;
+  }
+  
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f0f23;
+    margin: 40px 0 15px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #e53935;
+  }
+  
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 35px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #eee;
+  }
+  
+  h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #333;
+    margin: 25px 0 10px;
+  }
+  
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #555;
+    margin: 20px 0 8px;
+  }
+  
+  p {
+    margin: 10px 0;
+  }
+  
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 15px 0;
+    font-size: 13px;
+  }
+  
+  th {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+  
+  tr:nth-child(even) { background: #f8f9fa; }
+  tr:hover { background: #f0f4ff; }
+  
+  code {
+    background: #f1f3f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Consolas', monospace;
+    color: #c0392b;
+  }
+  
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 18px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 15px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+  
+  blockquote {
+    border-left: 4px solid #e53935;
+    padding: 12px 20px;
+    margin: 15px 0;
+    background: #fff8f8;
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+  }
+  
+  blockquote strong {
+    color: #e53935;
+  }
+
+  ul, ol {
+    padding-left: 25px;
+    margin: 10px 0;
+  }
+  
+  li {
+    margin: 5px 0;
+  }
+  
+  hr {
+    border: none;
+    border-top: 2px solid #eee;
+    margin: 30px 0;
+  }
+  
+  a {
+    color: #1a73e8;
+    text-decoration: none;
+  }
+  
+  /* Mermaid diagrams won't render in static HTML, show as code */
+  .language-mermaid {
+    background: #f8f9fa;
+    color: #333;
+    border: 1px dashed #ccc;
+    font-style: italic;
+  }
+
+  @media print {
+    body { padding: 20px 30px; font-size: 12px; }
+    h1 { font-size: 24px; page-break-after: avoid; }
+    h2 { font-size: 18px; page-break-after: avoid; }
+    h3 { page-break-after: avoid; }
+    table { page-break-inside: avoid; font-size: 11px; }
+    pre { page-break-inside: avoid; font-size: 11px; }
+    blockquote { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1 id="dokumentasi-sistem-rekomendasi-berita-projectta">Dokumentasi Sistem Rekomendasi Berita — ProjectTA</h1>
+<blockquote>
+<p><strong>Platform:</strong> Laravel 11 + Python (PyTorch) + Supabase (PostgreSQL)
+<strong>Desain UI:</strong> Mengacu pada <a href="https://ntvnews.id">ntvnews.id</a></p>
+</blockquote>
+<hr />
+<h2 id="daftar-isi">Daftar Isi</h2>
+<ol>
+<li><a href="#1-arsitektur-sistem">Arsitektur Sistem</a></li>
+<li><a href="#2-struktur-data-input">Struktur Data (Input)</a></li>
+<li><a href="#3-alur-seeding-data-ke-database">Alur Seeding Data ke Database</a></li>
+<li><a href="#4-model-rekomendasi-processing">Model Rekomendasi (Processing)</a></li>
+<li><a href="#5-pipeline-training-awal">Pipeline Training Awal</a></li>
+<li><a href="#6-pipeline-user-baru-dynamic-retraining">Pipeline User Baru (Dynamic Retraining)</a></li>
+<li><a href="#7-autentikasi--login">Autentikasi &amp; Login</a></li>
+<li><a href="#8-tampilan-website-output">Tampilan Website (Output)</a></li>
+<li><a href="#9-daftar-file--fungsinya">Daftar File &amp; Fungsinya</a></li>
+<li><a href="#10-skema-database-supabase">Skema Database Supabase</a></li>
+</ol>
+<hr />
+<h2 id="1-arsitektur-sistem">1. Arsitektur Sistem</h2>
+<pre><code class="language-mermaid">graph TD
+    subgraph INPUT[&quot;📥 INPUT DATA (CSV)&quot;]
+        A1[&quot;article_dataset5.csv&quot;]
+        A2[&quot;acu_interactions_customized5.csv&quot;]
+    end
+
+    subgraph SEED[&quot;🌱 SEEDING&quot;]
+        S1[&quot;seed_users.py&quot;]
+        S2[&quot;seed_articles_interactions.py&quot;]
+    end
+
+    subgraph DB[&quot;☁️ SUPABASE DATABASE&quot;]
+        D1[&quot;users&quot;]
+        D2[&quot;article&quot;]
+        D3[&quot;section&quot;]
+        D4[&quot;user_interaction&quot;]
+        D5[&quot;top_trending&quot;]
+        D6[&quot;recommendation_history&quot;]
+        D7[&quot;article_similarity&quot;]
+    end
+
+    subgraph TRAINING[&quot;⚙️ TRAINING (Python Engine)&quot;]
+        T0[&quot;train_all.py (Master)&quot;]
+        T1[&quot;train_popularity.py&quot;]
+        T2[&quot;train_cbf.py&quot;]
+        T3[&quot;train_lightgcn.py&quot;]
+    end
+
+    subgraph SPLIT[&quot;✂️ PREPROCESSING&quot;]
+        SP1[&quot;train_acu_customized5.csv&quot;]
+        SP2[&quot;test_acu_customized5.csv&quot;]
+    end
+
+    subgraph OUTPUT[&quot;📤 OUTPUT&quot;]
+        O1[&quot;Tabel top_trending&quot;]
+        O2[&quot;Tabel article_similarity&quot;]
+        O3[&quot;Tabel recommendation_history&quot;]
+        O4[&quot;saved_models/&quot;]
+    end
+
+    subgraph WEB[&quot;🌐 WEBSITE (Laravel)&quot;]
+        W1[&quot;Login → /login&quot;]
+        W2[&quot;Dashboard → /dashboard&quot;]
+        W3[&quot;Artikel → /article/id&quot;]
+        W4[&quot;Profil → /profile&quot;]
+        W5[&quot;Test Pipeline → /test&quot;]
+    end
+
+    A1 --&gt; S2
+    A2 --&gt; S2
+    S1 --&gt; D1
+    S2 --&gt; D2
+    S2 --&gt; D3
+    S2 --&gt; D4
+
+    A2 --&gt; SPLIT
+    SPLIT --&gt; TRAINING
+    A1 --&gt; TRAINING
+
+    T0 --&gt; T1
+    T0 --&gt; T2
+    T0 --&gt; T3
+
+    T1 --&gt; O1
+    T2 --&gt; O2
+    T3 --&gt; O3
+    T3 --&gt; O4
+
+    O1 --&gt; W2
+    O2 --&gt; W3
+    O3 --&gt; W2
+    D1 --&gt; W1
+    D2 --&gt; W2
+    D4 --&gt; W4
+</code></pre>
+<p><strong>Ringkasan:</strong> Data CSV → Di-seed ke Supabase → Model dilatih dari CSV → Hasil rekomendasi disimpan ke Supabase → Website Laravel membaca dari Supabase via JS Client.</p>
+<hr />
+<h2 id="2-struktur-data-input">2. Struktur Data (Input)</h2>
+<h3 id="21-article_dataset5csv-dataset-artikel">2.1 <code>article_dataset5.csv</code> — Dataset Artikel</h3>
+<table>
+<thead>
+<tr>
+<th>Kolom</th>
+<th>Tipe</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>article_id</code></td>
+<td>int</td>
+<td>ID unik artikel</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>Judul berita</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>string</td>
+<td>Isi lengkap berita</td>
+</tr>
+<tr>
+<td><code>photo_url</code></td>
+<td>string</td>
+<td>URL gambar thumbnail</td>
+</tr>
+<tr>
+<td><code>publish_date</code></td>
+<td>date</td>
+<td>Tanggal terbit</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>string</td>
+<td>URL asli berita di ntvnews.id</td>
+</tr>
+<tr>
+<td><code>section_id</code></td>
+<td>string</td>
+<td>Kategori (News, Hiburan, Ekonomi, dll.)</td>
+</tr>
+<tr>
+<td><code>view_count</code></td>
+<td>int</td>
+<td>Jumlah view artikel</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-acu_interactions_customized5csv-dataset-interaksi-user">2.2 <code>acu_interactions_customized5.csv</code> — Dataset Interaksi User</h3>
+<table>
+<thead>
+<tr>
+<th>Kolom</th>
+<th>Tipe</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>interaction_id</code></td>
+<td>int</td>
+<td>ID unik interaksi</td>
+</tr>
+<tr>
+<td><code>user_id</code></td>
+<td>int</td>
+<td>ID user yang melakukan klik</td>
+</tr>
+<tr>
+<td><code>article_id</code></td>
+<td>int</td>
+<td>ID artikel yang diklik</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-file-turunan-hasil-split">2.3 File Turunan (Hasil Split)</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>train_acu_customized5.csv</code></td>
+<td>Data training (~80%)</td>
+</tr>
+<tr>
+<td><code>test_acu_customized5.csv</code></td>
+<td>Data testing (~20%)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>[!NOTE]
+Split menggunakan <strong>weighted sampling berdasarkan inverse view_count²</strong>. Artikel dengan <code>view_count</code> rendah (unpopular) mendapat probabilitas lebih tinggi masuk ke test set, sehingga evaluasi model lebih menantang dan realistis.</p>
+</blockquote>
+<hr />
+<h2 id="3-alur-seeding-data-ke-database">3. Alur Seeding Data ke Database</h2>
+<h3 id="langkah-1-seed-users-seed_userspy">Langkah 1: Seed Users → <a href="file:///c:/laragon/www/ProjectTA/python_engine/seed_users.py">seed_users.py</a></h3>
+<p>Membaca data user dari CSV dan meng-<em>insert</em> ke tabel <code>users</code> di Supabase. Setiap user mendapatkan:
+- <code>username</code> dari dataset
+- <code>email</code> yang di-<em>generate</em>
+- <code>password</code> default (plain text = user_id)</p>
+<h3 id="langkah-2-seed-artikel-interaksi-seed_articles_interactionspy">Langkah 2: Seed Artikel &amp; Interaksi → <a href="file:///c:/laragon/www/ProjectTA/python_engine/seed_articles_interactions.py">seed_articles_interactions.py</a></h3>
+<ol>
+<li>Membaca <code>article_dataset5.csv</code> → Extract <code>section_id</code> unik → Upsert ke tabel <code>section</code></li>
+<li>Insert semua artikel ke tabel <code>article</code> (batch 500 rows)</li>
+<li>Membaca <code>acu_interactions_customized5.csv</code> → Insert ke tabel <code>user_interaction</code> (batch 500 rows)</li>
+</ol>
+<pre><code>python seed_users.py
+python seed_articles_interactions.py
+</code></pre>
+<hr />
+<h2 id="4-model-rekomendasi-processing">4. Model Rekomendasi (Processing)</h2>
+<p>Sistem menggunakan <strong>3 model</strong> rekomendasi yang saling melengkapi:</p>
+<h3 id="41-popularity-based-filtering-train_popularitypy">4.1 Popularity-Based Filtering → <a href="file:///c:/laragon/www/ProjectTA/python_engine/train_popularity.py">train_popularity.py</a></h3>
+<table>
+<thead>
+<tr>
+<th>Aspek</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Algoritma</strong></td>
+<td>Menghitung frekuensi interaksi per artikel dari data training</td>
+</tr>
+<tr>
+<td><strong>Input</strong></td>
+<td><code>train_acu_customized5.csv</code> + <code>article_dataset5.csv</code></td>
+</tr>
+<tr>
+<td><strong>Proses</strong></td>
+<td><code>GROUP BY article_id → COUNT → SORT DESC</code> lalu merge dengan <code>view_count</code></td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Top-K artikel terpopuler per user (eksklusi artikel yang sudah dibaca) → Tabel <code>top_trending</code></td>
+</tr>
+<tr>
+<td><strong>Evaluasi</strong></td>
+<td>Precision, Recall, NDCG @K=5,10,20 terhadap test set</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Alur Inference (per user):</strong>
+1. Hitung ranking global popularitas dari train set
+2. Ambil daftar artikel yang sudah dibaca user (<code>seen</code>)
+3. Filter out <code>seen</code>, ambil Top-5 → Simpan ke <code>top_trending</code></p>
+<hr />
+<h3 id="42-content-based-filtering-cbf-train_cbfpy">4.2 Content-Based Filtering (CBF) → <a href="file:///c:/laragon/www/ProjectTA/python_engine/train_cbf.py">train_cbf.py</a></h3>
+<table>
+<thead>
+<tr>
+<th>Aspek</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Algoritma</strong></td>
+<td>TF-IDF + Cosine Similarity</td>
+</tr>
+<tr>
+<td><strong>Input</strong></td>
+<td><code>article_dataset5.csv</code> (kolom <code>title</code> + <code>content</code>)</td>
+</tr>
+<tr>
+<td><strong>Preprocessing</strong></td>
+<td>Lowercase → Hapus URL &amp; karakter khusus → Hapus stopwords Indonesia (<code>tala-stopwords-indonesia.txt</code>)</td>
+</tr>
+<tr>
+<td><strong>Pembobotan</strong></td>
+<td>Title diulang 3x untuk memberi bobot lebih tinggi</td>
+</tr>
+<tr>
+<td><strong>Vectorizer</strong></td>
+<td><code>TfidfVectorizer(max_features=10000, ngram_range=(1,2))</code></td>
+</tr>
+<tr>
+<td><strong>Output Training</strong></td>
+<td>Matriks cosine similarity → <code>saved_models/cbf_sim_matrix.pkl</code> + <code>cbf_article_info.pkl</code></td>
+</tr>
+<tr>
+<td><strong>Output Inference</strong></td>
+<td>Top-K artikel mirip berdasarkan histori user → Tabel <code>article_similarity</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Alur Inference (per user):</strong>
+1. Load matriks similarity dari <code>.pkl</code>
+2. Ambil histori baca user dari train set
+3. Untuk setiap artikel yang pernah dibaca, cari artikel paling mirip
+4. Agregasi score, filter duplikat, ambil Top-5 → Simpan ke <code>article_similarity</code></p>
+<hr />
+<h3 id="43-lightgcn-graph-collaborative-filtering-train_lightgcnpy">4.3 LightGCN (Graph Collaborative Filtering) → <a href="file:///c:/laragon/www/ProjectTA/python_engine/train_lightgcn.py">train_lightgcn.py</a></h3>
+<table>
+<thead>
+<tr>
+<th>Aspek</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Algoritma</strong></td>
+<td>LightGCN (Light Graph Convolutional Network) menggunakan PyTorch Geometric</td>
+</tr>
+<tr>
+<td><strong>Input</strong></td>
+<td><code>train_acu_customized5.csv</code> + <code>test_acu_customized5.csv</code></td>
+</tr>
+<tr>
+<td><strong>Arsitektur</strong></td>
+<td>Embedding Dim=8, Layers=2, menggunakan <code>LGConv</code> dari PyTorch Geometric</td>
+</tr>
+<tr>
+<td><strong>Loss Function</strong></td>
+<td>BPR Loss (Bayesian Personalized Ranking) + L2 Regularization</td>
+</tr>
+<tr>
+<td><strong>Optimizer</strong></td>
+<td>Adam (LR=1e-4, Weight Decay=5e-3)</td>
+</tr>
+<tr>
+<td><strong>Training</strong></td>
+<td>Max 100 epochs, Early Stopping (patience=10), 30 steps/epoch, batch=512</td>
+</tr>
+<tr>
+<td><strong>Popularity Debiasing</strong></td>
+<td>Score akhir = <code>score - α × pop_score</code> (α=0.1) untuk mengurangi bias popularitas</td>
+</tr>
+<tr>
+<td><strong>Output Training</strong></td>
+<td><code>saved_models/best_model.pt</code> + <code>lightgcn_mappings.pkl</code></td>
+</tr>
+<tr>
+<td><strong>Output Inference</strong></td>
+<td>Top-K rekomendasi personal → Tabel <code>recommendation_history</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Alur Training:</strong>
+1. Load train CSV → Split internal 90% train / 10% validation
+2. Encode <code>user_id</code> dan <code>article_id</code> ke indeks integer (LabelEncoder)
+3. Bangun bipartite graph (user↔item) → <code>edge_index</code>
+4. Training loop: BPR loss + negative sampling (popularity-weighted)
+5. Early stopping berdasarkan validation loss → Simpan bobot terbaik</p>
+<p><strong>Alur Inference (per user):</strong>
+1. Load model + mappings dari <code>.pkl</code> dan <code>.pt</code>
+2. Forward pass → dapatkan user embedding &amp; item embedding
+3. Hitung dot product score untuk semua item
+4. Kurangi popularity bias (<code>score - α × pop_score</code>)
+5. Mask item yang sudah dilihat → Ambil Top-5 → Simpan ke <code>recommendation_history</code></p>
+<hr />
+<h2 id="5-pipeline-training-awal">5. Pipeline Training Awal</h2>
+<h3 id="master-script-train_allpy">Master Script → <a href="file:///c:/laragon/www/ProjectTA/python_engine/train_all.py">train_all.py</a></h3>
+<pre><code>python train_all.py --epochs 100 --embedding_dim 8 --num_layers 2
+</code></pre>
+<p><strong>Urutan Eksekusi:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Proses</th>
+<th>Fungsi yang dipanggil</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1/4</td>
+<td>Train CBF (TF-IDF)</td>
+<td><code>train_cbf.train()</code></td>
+</tr>
+<tr>
+<td>2/4</td>
+<td>Evaluasi Popularity</td>
+<td><code>train_popularity.train()</code></td>
+</tr>
+<tr>
+<td>3/4</td>
+<td>Train LightGCN</td>
+<td><code>train_lightgcn.train()</code></td>
+</tr>
+<tr>
+<td>4/4</td>
+<td>Auto-Generate Rekomendasi User 1-20</td>
+<td><code>generate_recommendations.generate_for_user(uid)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="batch-inference-batch_inferencepy">Batch Inference → <a href="file:///c:/laragon/www/ProjectTA/python_engine/batch_inference.py">batch_inference.py</a></h3>
+<p>Untuk men-generate rekomendasi semua user sekaligus dan menyimpan hasilnya ke Supabase:</p>
+<pre><code>python batch_inference.py
+</code></pre>
+<ol>
+<li><strong>Popularity</strong> → Hitung ranking global → Generate Top-5 per user → Bulk insert ke <code>top_trending</code></li>
+<li><strong>LightGCN</strong> → Load model → Forward pass → Generate Top-5 per user → Bulk insert ke <code>recommendation_history</code></li>
+<li><strong>CBF</strong> → Load similarity matrix → Generate Top-5 similar per artikel → Bulk insert ke <code>article_similarity</code></li>
+</ol>
+<hr />
+<h2 id="6-pipeline-user-baru-dynamic-retraining">6. Pipeline User Baru (Dynamic Retraining)</h2>
+<h3 id="script-test_new_user_pipelinepy">Script → <a href="file:///c:/laragon/www/ProjectTA/python_engine/test_new_user_pipeline.py">test_new_user_pipeline.py</a></h3>
+<p>Dipanggil otomatis oleh <a href="file:///c:/laragon/www/ProjectTA/app/Http/Controllers/TestController.php">TestController.php</a> saat user baru mendaftar melalui halaman <code>/test</code>.</p>
+<pre><code>python test_new_user_pipeline.py --user_id &lt;id&gt;
+</code></pre>
+<h3 id="6-langkah-pipeline">6 Langkah Pipeline:</h3>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Proses</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1/6</strong></td>
+<td>Fetch interaksi user baru</td>
+<td>Query tabel <code>user_interaction</code> dari Supabase untuk <code>user_id</code> yang baru</td>
+</tr>
+<tr>
+<td><strong>2/6</strong></td>
+<td>Gabung dengan data lama</td>
+<td>Load CSV interaksi terbaru (versi N-1), concat, deduplikasi</td>
+</tr>
+<tr>
+<td><strong>3/6</strong></td>
+<td>Update view_count artikel</td>
+<td>+1 view_count di CSV <strong>dan</strong> di Supabase untuk setiap artikel yang diklik</td>
+</tr>
+<tr>
+<td><strong>4/6</strong></td>
+<td>Train-test split</td>
+<td>Weighted split (unpopular articles → test set), filter cold-start (≥2 interaksi)</td>
+</tr>
+<tr>
+<td><strong>5/6</strong></td>
+<td>Simpan 4 CSV berversi</td>
+<td><code>acu_interactions_customized5(N).csv</code>, <code>train_...(N).csv</code>, <code>test_...(N).csv</code>, <code>article_dataset5(N).csv</code></td>
+</tr>
+<tr>
+<td><strong>6/6</strong></td>
+<td>Retrain &amp; Generate</td>
+<td>Train ulang LightGCN dari epoch 0, generate Popularity + LightGCN recs untuk user baru</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sistem-versioning-csv">Sistem Versioning CSV</h3>
+<p>Setiap kali pipeline dijalankan, 4 file baru dibuat dengan suffix <code>(N)</code>:</p>
+<pre><code>Versi 0 (base):  article_dataset5.csv
+Versi 1:         article_dataset5(1).csv   ← view_count diperbarui
+Versi 2:         article_dataset5(2).csv   ← view_count diperbarui lagi
+...dst
+</code></pre>
+<p>Fungsi <code>get_latest_article_csv()</code> dan <code>get_latest_interactions_csv()</code> selalu mencari file versi tertinggi yang ada.</p>
+<hr />
+<h2 id="7-autentikasi-login">7. Autentikasi &amp; Login</h2>
+<h3 id="controller-authcontrollerphp">Controller → <a href="file:///c:/laragon/www/ProjectTA/app/Http/Controllers/AuthController.php">AuthController.php</a></h3>
+<table>
+<thead>
+<tr>
+<th>Aspek</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Metode</strong></td>
+<td>Supabase REST API (bypass PDO/IPv6 DNS issue)</td>
+</tr>
+<tr>
+<td><strong>Validasi Password</strong></td>
+<td>Dual-check: Plain text (user baru dari /test) <strong>atau</strong> Bcrypt hash (user dataset)</td>
+</tr>
+<tr>
+<td><strong>Error Handling</strong></td>
+<td>Pesan spesifik: "Password salah", "Email belum terdaftar", "Gagal menghubungi server"</td>
+</tr>
+<tr>
+<td><strong>Post-Login</strong></td>
+<td>Set <code>session('active_user_id')</code> + Dispatch <code>GenerateRecommendationsJob</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Alur Login:</strong>
+1. User submit email + password di <code>/login</code>
+2. Laravel mengirim HTTP GET ke Supabase REST API: <code>GET /rest/v1/users?email=eq.{email}</code>
+3. Jika user ditemukan → Bandingkan password (plain text atau bcrypt)
+4. Jika cocok → Redirect ke <code>/dashboard</code>
+5. Jika tidak → Tampilkan pesan error di halaman login</p>
+<hr />
+<h2 id="8-tampilan-website-output">8. Tampilan Website (Output)</h2>
+<h3 id="81-halaman-login-login-loginbladephp">8.1 Halaman Login (<code>/login</code>) → <a href="file:///c:/laragon/www/ProjectTA/resources/views/auth/login.blade.php">login.blade.php</a></h3>
+<ul>
+<li>Form input email &amp; password</li>
+<li>Menampilkan pesan error validasi (blok <code>@if($errors-&gt;any())</code>)</li>
+<li>Redirect ke <code>/dashboard</code> setelah login berhasil</li>
+</ul>
+<h3 id="82-halaman-dashboard-dashboard-dashboardbladephp">8.2 Halaman Dashboard (<code>/dashboard</code>) → <a href="file:///c:/laragon/www/ProjectTA/resources/views/dashboard.blade.php">dashboard.blade.php</a></h3>
+<p>Layout utama terdiri dari <strong>3 seksi rekomendasi</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Seksi</th>
+<th>Sumber Data</th>
+<th>Tabel Supabase</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Berita Terkini</strong></td>
+<td><code>article</code></td>
+<td><code>article</code></td>
+<td>10 artikel terbaru (sort by <code>publish_date</code>)</td>
+</tr>
+<tr>
+<td><strong>Populer (Trending)</strong></td>
+<td>Popularity Model</td>
+<td><code>top_trending</code></td>
+<td>Top-5 artikel terpopuler yang belum dibaca user</td>
+</tr>
+<tr>
+<td><strong>Rekomendasi Untuk Anda</strong></td>
+<td>LightGCN Model</td>
+<td><code>recommendation_history</code></td>
+<td>Top-5 rekomendasi personal berdasarkan graph collaborative filtering</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Fitur Tambahan:</strong>
+- <strong>Search:</strong> Pencarian artikel via query parameter <code>?q=</code>
+- <strong>Real-time Update:</strong> Supabase Realtime listener pada tabel <code>recommendation_history</code> dan <code>top_trending</code>
+- <strong>Load More:</strong> Tombol untuk memuat artikel terkini tambahan
+- <strong>Navigasi Kategori:</strong> Link ke halaman section (News, Hiburan, Ekonomi, dll.)</p>
+<h3 id="83-halaman-artikel-articleid-articlebladephp">8.3 Halaman Artikel (<code>/article/{id}</code>) → <a href="file:///c:/laragon/www/ProjectTA/resources/views/article.blade.php">article.blade.php</a></h3>
+<ul>
+<li>Menampilkan detail artikel (judul, konten, gambar, tanggal, kategori)</li>
+<li><strong>Artikel Terkait (CBF):</strong> Mengambil dari tabel <code>article_similarity</code> → Menampilkan artikel serupa berdasarkan TF-IDF similarity</li>
+<li><strong>Tombol Bookmark:</strong> Menyimpan artikel ke tabel <code>user_bookmarks</code></li>
+</ul>
+<h3 id="84-halaman-kategori-sectionid-sectionbladephp">8.4 Halaman Kategori (<code>/section/{id}</code>) → <a href="file:///c:/laragon/www/ProjectTA/resources/views/section.blade.php">section.blade.php</a></h3>
+<ul>
+<li>Menampilkan semua artikel dalam satu kategori (News, Hiburan, Ekonomi, Olahraga, dll.)</li>
+<li>Diurutkan berdasarkan <code>publish_date</code> terbaru</li>
+</ul>
+<h3 id="85-halaman-profil-profile-profilebladephp">8.5 Halaman Profil (<code>/profile</code>) → <a href="file:///c:/laragon/www/ProjectTA/resources/views/profile.blade.php">profile.blade.php</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Saved Articles</strong></td>
+<td>Artikel yang di-bookmark user (dari tabel <code>user_bookmarks</code>)</td>
+</tr>
+<tr>
+<td><strong>Reading History</strong></td>
+<td>Semua artikel yang pernah diklik (dari tabel <code>user_interaction</code>), dengan pagination 9 per halaman + tombol "Lihat Histori Lainnya"</td>
+</tr>
+<tr>
+<td><strong>Settings</strong></td>
+<td>Edit username, email, foto profil, password + tombol Logout</td>
+</tr>
+</tbody>
+</table>
+<h3 id="86-halaman-test-pipeline-test-testbladephp">8.6 Halaman Test Pipeline (<code>/test</code>) → <a href="file:///c:/laragon/www/ProjectTA/resources/views/test.blade.php">test.blade.php</a></h3>
+<p>Wizard 3 langkah untuk mendemonstrasikan pipeline rekomendasi:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Step 1</strong></td>
+<td>Registrasi user baru (username, email, password) → Insert ke tabel <code>users</code> via Supabase JS Client</td>
+</tr>
+<tr>
+<td><strong>Step 2</strong></td>
+<td>Pilih artikel yang diminati (semua artikel dari Supabase) → Insert ke tabel <code>user_interaction</code></td>
+</tr>
+<tr>
+<td><strong>Step 3</strong></td>
+<td>Trigger training pipeline → POST ke <code>/test/train</code> → <code>TestController</code> menjalankan <code>test_new_user_pipeline.py</code> → Redirect ke <code>/dashboard</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9-daftar-file-fungsinya">9. Daftar File &amp; Fungsinya</h2>
+<h3 id="python-engine-python_engine">Python Engine (<code>python_engine/</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Fungsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/config.py">config.py</a></td>
+<td>Konfigurasi pusat: kredensial Supabase, path CSV, TOP_K, env var override</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/db_client.py">db_client.py</a></td>
+<td>Singleton Supabase client (REST API)</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/train_popularity.py">train_popularity.py</a></td>
+<td>Model Popularity: training, evaluasi, inference</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/train_cbf.py">train_cbf.py</a></td>
+<td>Model CBF: TF-IDF vectorization, cosine similarity, inference</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/train_lightgcn.py">train_lightgcn.py</a></td>
+<td>Model LightGCN: GNN training (PyTorch), BPR loss, inference</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/train_all.py">train_all.py</a></td>
+<td>Master script: jalankan semua training + auto-generate recs</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/batch_inference.py">batch_inference.py</a></td>
+<td>Generate rekomendasi semua user sekaligus (bulk)</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/generate_recommendations.py">generate_recommendations.py</a></td>
+<td>Generate rekomendasi untuk 1 user (semua model)</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/test_new_user_pipeline.py">test_new_user_pipeline.py</a></td>
+<td>Pipeline user baru: fetch, merge, split, versioning, retrain</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/seed_users.py">seed_users.py</a></td>
+<td>Seed data user ke Supabase</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/seed_articles_interactions.py">seed_articles_interactions.py</a></td>
+<td>Seed artikel, section, interaksi ke Supabase</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/python_engine/update_passwords.py">update_passwords.py</a></td>
+<td>Update password user agar sesuai user_id</td>
+</tr>
+<tr>
+<td><code>tala-stopwords-indonesia.txt</code></td>
+<td>Daftar stopwords Bahasa Indonesia untuk preprocessing CBF</td>
+</tr>
+</tbody>
+</table>
+<h3 id="saved-models-python_enginesaved_models">Saved Models (<code>python_engine/saved_models/</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Model</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>best_model.pt</code></td>
+<td>LightGCN</td>
+<td>Bobot model PyTorch terbaik (early stopping)</td>
+</tr>
+<tr>
+<td><code>lightgcn_mappings.pkl</code></td>
+<td>LightGCN</td>
+<td>LabelEncoder, edge_index, pop_score, ground truth</td>
+</tr>
+<tr>
+<td><code>cbf_sim_matrix.pkl</code></td>
+<td>CBF</td>
+<td>Matriks cosine similarity antar artikel</td>
+</tr>
+<tr>
+<td><code>cbf_article_info.pkl</code></td>
+<td>CBF</td>
+<td>DataFrame artikel + teks yang sudah dipreprocess</td>
+</tr>
+</tbody>
+</table>
+<h3 id="laravel-controllers-apphttpcontrollers">Laravel Controllers (<code>app/Http/Controllers/</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Fungsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/app/Http/Controllers/AuthController.php">AuthController.php</a></td>
+<td>Login (Supabase REST API), Logout, session management</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/app/Http/Controllers/TestController.php">TestController.php</a></td>
+<td>Halaman <code>/test</code>, trigger Python pipeline via <code>exec()</code></td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/app/Http/Controllers/RecommendationController.php">RecommendationController.php</a></td>
+<td>API endpoint untuk data rekomendasi, status, regenerate</td>
+</tr>
+</tbody>
+</table>
+<h3 id="laravel-views-resourcesviews">Laravel Views (<code>resources/views/</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Halaman</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/resources/views/layouts/app.blade.php">app.blade.php</a></td>
+<td>Layout utama (header, nav, footer, Supabase JS init)</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/resources/views/auth/login.blade.php">login.blade.php</a></td>
+<td>Form login + error display</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/resources/views/dashboard.blade.php">dashboard.blade.php</a></td>
+<td>Beranda + 3 seksi rekomendasi</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/resources/views/article.blade.php">article.blade.php</a></td>
+<td>Detail artikel + artikel terkait (CBF)</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/resources/views/section.blade.php">section.blade.php</a></td>
+<td>Daftar artikel per kategori</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/resources/views/profile.blade.php">profile.blade.php</a></td>
+<td>Profil user + reading history + bookmark</td>
+</tr>
+<tr>
+<td><a href="file:///c:/laragon/www/ProjectTA/resources/views/test.blade.php">test.blade.php</a></td>
+<td>Wizard registrasi + pipeline demo</td>
+</tr>
+</tbody>
+</table>
+<h3 id="laravel-models-appmodels">Laravel Models (<code>app/Models/</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Tabel Supabase</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>User.php</code></td>
+<td><code>users</code></td>
+</tr>
+<tr>
+<td><code>Article.php</code></td>
+<td><code>article</code></td>
+</tr>
+<tr>
+<td><code>Section.php</code></td>
+<td><code>section</code></td>
+</tr>
+<tr>
+<td><code>TopTrending.php</code></td>
+<td><code>top_trending</code></td>
+</tr>
+<tr>
+<td><code>RecommendationHistory.php</code></td>
+<td><code>recommendation_history</code></td>
+</tr>
+<tr>
+<td><code>ArticleSimilarity.php</code></td>
+<td><code>article_similarity</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-skema-database-supabase">10. Skema Database Supabase</h2>
+<h3 id="tabel-utama">Tabel Utama</h3>
+<pre><code class="language-mermaid">erDiagram
+    users {
+        int user_id PK
+        string username
+        string email
+        string password
+        string photo_url
+    }
+
+    article {
+        int article_id PK
+        string title
+        text content
+        string photo_url
+        date publish_date
+        string url
+        string section_id FK
+        int view_count
+    }
+
+    section {
+        string section_id PK
+        string section_name
+    }
+
+    user_interaction {
+        int interaction_id PK
+        int user_id FK
+        int article_id FK
+    }
+
+    users ||--o{ user_interaction : &quot;has&quot;
+    article ||--o{ user_interaction : &quot;clicked&quot;
+    section ||--o{ article : &quot;belongs to&quot;
+</code></pre>
+<h3 id="tabel-hasil-rekomendasi">Tabel Hasil Rekomendasi</h3>
+<pre><code class="language-mermaid">erDiagram
+    top_trending {
+        int user_id FK
+        int article_id FK
+        int rank_position
+        int view_count
+        datetime generated_at
+    }
+
+    recommendation_history {
+        int user_id FK
+        int article_id FK
+        int rank_position
+        datetime generated_at
+    }
+
+    article_similarity {
+        int article_id FK
+        int similar_article_id FK
+        int rank_position
+        datetime generated_at
+    }
+
+    user_bookmarks {
+        int user_id FK
+        int article_id FK
+        datetime created_at
+    }
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Tabel</th>
+<th>Diisi oleh Model</th>
+<th>Dibaca oleh Halaman</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>top_trending</code></td>
+<td>Popularity</td>
+<td>Dashboard (sidebar)</td>
+</tr>
+<tr>
+<td><code>recommendation_history</code></td>
+<td>LightGCN</td>
+<td>Dashboard (seksi rekomendasi)</td>
+</tr>
+<tr>
+<td><code>article_similarity</code></td>
+<td>CBF</td>
+<td>Halaman Artikel (artikel terkait)</td>
+</tr>
+<tr>
+<td><code>user_bookmarks</code></td>
+<td>User action (bookmark)</td>
+<td>Profil (Saved Articles)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<blockquote>
+<p>[!IMPORTANT]
+<strong>Alur End-to-End Ringkas:</strong>
+1. <strong>CSV</strong> di-seed ke <strong>Supabase</strong> → 2. CSV di-split menjadi <strong>train/test</strong> → 3. Model <strong>Popularity + CBF + LightGCN</strong> dilatih → 4. Hasil rekomendasi disimpan ke <strong>Supabase</strong> → 5. <strong>Website Laravel</strong> membaca dari Supabase via <strong>JavaScript Client</strong> → 6. User baru mendaftar di <code>/test</code> → 7. <strong>Pipeline otomatis</strong> retrain + versioning CSV + update view_count → 8. Rekomendasi baru langsung tersedia di <strong>Dashboard</strong>.</p>
+</blockquote>
+</body>
+</html>

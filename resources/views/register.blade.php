@@ -305,7 +305,7 @@
         <div class="test-card">
 
             <div class="test-logo">ntvnews<span>.id</span></div>
-            <div class="test-subtitle">Demo Inference Pipeline</div>
+            <div class="test-subtitle">Demo Inference Model</div>
 
             <!-- Step Progress -->
             <div class="step-progress">
@@ -501,20 +501,20 @@
                     return;
                 }
                 list.innerHTML = articles.map(a => `
-                <label class="article-item ${selectedIds.has(a.article_id) ? 'selected' : ''}"
-                       data-id="${a.article_id}">
-                    <input type="checkbox" value="${a.article_id}"
-                           ${selectedIds.has(a.article_id) ? 'checked' : ''}
-                           onchange="toggleArticle(${a.article_id}, this.checked, this.closest('label'))">
-                    <div style="flex: 1;">
-                        <div class="art-title">${a.title}</div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                            <span class="art-section">${window.getSectionName ? window.getSectionName(a.section_id) : a.section_id}</span>
-                            <span style="font-size: 10px; color: #666; font-weight: bold;"><i class="fa-solid fa-eye"></i> ${a.view_count || 0} views</span>
-                        </div>
-                    </div>
-                </label>
-            `).join('');
+                            <label class="article-item ${selectedIds.has(a.article_id) ? 'selected' : ''}"
+                                   data-id="${a.article_id}">
+                                <input type="checkbox" value="${a.article_id}"
+                                       ${selectedIds.has(a.article_id) ? 'checked' : ''}
+                                       onchange="toggleArticle(${a.article_id}, this.checked, this.closest('label'))">
+                                <div style="flex: 1;">
+                                    <div class="art-title">${a.title}</div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                        <span class="art-section">${window.getSectionName ? window.getSectionName(a.section_id) : a.section_id}</span>
+                                        <span style="font-size: 10px; color: #666; font-weight: bold;"><i class="fa-solid fa-eye"></i> ${a.view_count || 0} views</span>
+                                    </div>
+                                </div>
+                            </label>
+                        `).join('');
             }
 
             // Search filter
@@ -545,8 +545,8 @@
                 const messages = [
                     ' ✅ Menyimpan interaksi ke database...',
                     ' ✅ Memuat dataset interaksi terbaru...',
-                    ' ✅ Menjalankan train-test split...',
-                    ' ✅ Menyimpan CSV berversi baru...',
+                    ' ✅ Memperbarui view_count artikel...',
+                    ' ✅ Menyimpan file csv berversi baru...',
                     ' ✅ Melatih ulang LightGCN dari epoch 0...',
                     ' ✅ Menghitung Popularity-Based Filtering...',
                     ' ✅ Menyimpan rekomendasi ke Supabase...',
@@ -589,7 +589,7 @@
                     }
 
                     // 2. Panggil backend PHP untuk menjalankan script Python
-                    const resp = await fetch('{{ route("test.train") }}', {
+                    const resp = await fetch('{{ route("register.train") }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -610,12 +610,12 @@
                         return;
                     }
 
-                    logEl.textContent += '\n Training selesai! Mengalihkan ke dashboard...\n';
+                    logEl.textContent += '\n Training selesai! Mengalihkan ke homepage...\n';
                     logEl.scrollTop = logEl.scrollHeight;
 
-                    // Set session cookie agar dashboard tahu user_id
+                    // Set session cookie agar homepage tahu user_id
                     setTimeout(() => {
-                        window.location.href = '/dashboard';
+                        window.location.href = '/homepage';
                     }, 2000);
 
                 } catch (e) {

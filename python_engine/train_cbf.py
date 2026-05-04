@@ -21,7 +21,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import ARTICLE_CSV, TRAIN_CSV, SAVED_MODELS_DIR, TOP_K
+from config import ARTICLE_CSV, INTERACTIONS_CSV, SAVED_MODELS_DIR, TOP_K
 from db_client import supabase_client
 
 # ─── Path model tersimpan ────────────────────────────────────────────────────
@@ -101,9 +101,9 @@ def _load_model():
 
 
 def _get_user_history(user_id: int) -> list[int]:
-    """Ambil daftar article_id yang pernah diinteraksikan user dari Train set."""
-    train_df = pd.read_csv(TRAIN_CSV)
-    user_hist = train_df[train_df["user_id"] == user_id]["article_id"].tolist()
+    """Ambil daftar article_id yang pernah diinteraksikan user dari interactions."""
+    df = pd.read_csv(INTERACTIONS_CSV)
+    user_hist = df[df["user_id"] == user_id]["article_id"].tolist()
     return user_hist
 
 
@@ -175,6 +175,58 @@ def save_cbf_recs(user_id: int, recs: list[dict]) -> None:
     print(f"[CBF] User {user_id} → {len(rows)} artikel tersimpan ke article_similarity.")
 
 
+def generate_article_similarity(article_id: int, k: int = TOP_K) -> list[dict]:
+    """Generate top-k artikel serupa untuk SATU artikel (item-to-item)."""
+    cosine_sim, df = _load_model()
+    id_to_idx = {row["article_id"]: idx for idx, row in df.iterrows()}
+
+    if article_id not in id_to_idx:
+        return []
+
+    idx = id_to_idx[article_id]
+    scores = list(enumerate(cosine_sim[idx]))
+    scores = [(j, s) for j, s in scores if df.iloc[j]["article_id"] != article_id]
+    scores.sort(key=lambda x: x[1], reverse=True)
+
+    result = []
+    for rank, (j, _score) in enumerate(scores[:k], start=1):
+        result.append({
+            "article_id":         int(article_id),
+            "similar_article_id": int(df.iloc[j]["article_id"]),
+            "rank_position":      rank,
+        })
+    return result
+
+
+def generate_all_article_similarities(k: int = TOP_K) -> None:
+    """Generate CBF similarity untuk SEMUA artikel dan simpan ke Supabase."""
+    cosine_sim, df = _load_model()
+    client = supabase_client()
+    all_articles = df["article_id"].tolist()
+
+    print(f"[CBF] Generating similarity untuk {len(all_articles)} artikel...")
+
+    # Clear existing
+    client.table("article_similarity").delete().neq("article_id", -1).execute()
+
+    rows = []
+    for art_id in all_articles:
+        sims = generate_article_similarity(art_id, k=k)
+        rows.extend({
+            "article_id":         s["article_id"],
+            "similar_article_id": s["similar_article_id"],
+            "rank_position":      s["rank_position"],
+            "generated_at":       datetime.utcnow().isoformat(),
+        } for s in sims)
+
+    # Batch insert
+    batch_size = 500
+    for i in range(0, len(rows), batch_size):
+        client.table("article_similarity").insert(rows[i:i+batch_size]).execute()
+
+    print(f"[CBF] {len(rows)} rows tersimpan ke article_similarity.")
+
+
 def run(user_id: int) -> None:
     recs = generate_cbf_recs(user_id)
     save_cbf_recs(user_id, recs)
@@ -183,13 +235,16 @@ def run(user_id: int) -> None:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train",   action="store_true")
-    parser.add_argument("--user_id", type=int, default=None)
+    parser.add_argument("--train",       action="store_true")
+    parser.add_argument("--user_id",     type=int, default=None)
+    parser.add_argument("--all-articles", action="store_true", help="Generate similarity untuk semua artikel")
     args = parser.parse_args()
 
     if args.train:
         train()
+    elif args.all_articles:
+        generate_all_article_similarities()
     elif args.user_id:
         run(args.user_id)
     else:
-        print("Gunakan --train atau --user_id=<id>")
+        print("Gunakan --train, --all-articles, atau --user_id=<id>")
