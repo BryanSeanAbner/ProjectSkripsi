@@ -367,14 +367,22 @@
             <!-- ═══ STEP 3: Training ══════════════════════════════════════════ -->
             <div class="step-panel" id="step-3">
                 <div class="loading-box">
-                    <div class="spinner"></div>
+                    <div class="spinner" id="loading-spinner"></div>
                     <h3>Sedang Melatih Model...</h3>
                     <p>Proses ini membutuhkan waktu beberapa menit.<br>Mohon jangan tutup halaman ini.</p>
 
-                    <div class="log-output" id="log-output"></div>
+                    <!-- Progress Bar -->
+                    <div style="margin: 30px 0; background: #e8edf2; border-radius: 8px; height: 12px; overflow: hidden; position: relative;">
+                        <div id="progress-bar" style="width: 0%; height: 100%; background: var(--bg-primary); transition: width 0.3s ease;"></div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <span id="progress-step" style="font-size: 13px; font-weight: 600; color: var(--bg-primary);">Memulai pipeline...</span>
+                        <span id="progress-percent" style="font-size: 14px; font-weight: 800; color: var(--accent);">0%</span>
+                    </div>
 
                     <p style="margin-top:16px; font-size:11px; color:#bbb;">
-                        Setelah selesai, Anda akan diarahkan ke dashboard secara otomatis.
+                        Setelah selesai, Anda akan diarahkan ke homepage secara otomatis.
                     </p>
                 </div>
             </div>
@@ -423,9 +431,6 @@
 
                 if (!username || !email || !password) {
                     showError('err-step1', 'Semua field harus diisi!'); return;
-                }
-                if (password.length < 6) {
-                    showError('err-step1', 'Password minimal 6 karakter!'); return;
                 }
 
                 const btn = document.getElementById('btn-step1');
@@ -505,7 +510,7 @@
                                    data-id="${a.article_id}">
                                 <input type="checkbox" value="${a.article_id}"
                                        ${selectedIds.has(a.article_id) ? 'checked' : ''}
-                                       onchange="toggleArticle(${a.article_id}, this.checked, this.closest('label'))">
+                                       onchange="window.toggleArticle(${a.article_id}, this.checked, this.closest('label'))">
                                 <div style="flex: 1;">
                                     <div class="art-title">${a.title}</div>
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
@@ -518,21 +523,28 @@
             }
 
             // Search filter
-            document.getElementById('art-search').addEventListener('input', function () {
-                const q = this.value.toLowerCase();
-                renderArticles(allArticles.filter(a => a.title.toLowerCase().includes(q)));
-            });
+            const searchInput = document.getElementById('search-art');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const q = e.target.value.toLowerCase();
+                    const filtered = allArticles.filter(a => a.title.toLowerCase().includes(q));
+                    renderArticles(filtered);
+                });
+            }
 
-            window.toggleArticle = function (id, checked, el) {
-                if (checked) selectedIds.add(id);
-                else selectedIds.delete(id);
-                el.classList.toggle('selected', checked);
-                const cnt = selectedIds.size;
-                document.getElementById('sel-count').textContent = cnt;
-                document.getElementById('btn-step2').disabled = cnt < 2;
+            window.toggleArticle = function(id, isChecked, labelEl) {
+                if (isChecked) {
+                    selectedIds.add(id);
+                    labelEl.classList.add('selected');
+                } else {
+                    selectedIds.delete(id);
+                    labelEl.classList.remove('selected');
+                }
+                document.getElementById('sel-count').textContent = selectedIds.size;
+                document.getElementById('btn-step2').disabled = selectedIds.size < 2;
             };
 
-            // ─── STEP 3: Trigger Training ─────────────────────────────────────────
+            // ─── STEP 3: Trigger Training + Poll Progress ───────────────────────
             document.getElementById('btn-step2').addEventListener('click', async () => {
                 clearError('err-step2');
                 if (selectedIds.size < 2) {
@@ -541,27 +553,8 @@
 
                 goToStep(3);
 
-                const logEl = document.getElementById('log-output');
-                const messages = [
-                    ' ✅ Menyimpan interaksi ke database...',
-                    ' ✅ Memuat dataset interaksi terbaru...',
-                    ' ✅ Memperbarui view_count artikel...',
-                    ' ✅ Menyimpan file csv berversi baru...',
-                    ' ✅ Melatih ulang LightGCN dari epoch 0...',
-                    ' ✅ Menghitung Popularity-Based Filtering...',
-                    ' ✅ Menyimpan rekomendasi ke Supabase...',
-                ];
-                let msgIdx = 0;
-                logEl.style.display = 'block';
-                const interval = setInterval(() => {
-                    if (msgIdx < messages.length) {
-                        logEl.textContent += messages[msgIdx++] + '\n';
-                        logEl.scrollTop = logEl.scrollHeight;
-                    }
-                }, 8000);
-
                 try {
-                    // Ambil ID interaksi terbesar dulu karena tabel tidak auto-increment
+                    // 1. Insert interaksi ke Supabase
                     const { data: maxIntData } = await supabaseClient
                         .from('user_interaction')
                         .select('interaction_id')
@@ -588,40 +581,88 @@
                         throw new Error('Gagal insert interaksi: ' + insertErr.message);
                     }
 
-                    // 2. Panggil backend PHP untuk menjalankan script Python
+                    // 2. Trigger training di background menggunakan stream reader
                     const resp = await fetch('{{ route("register.train") }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         },
-                        body: JSON.stringify({
-                            user_id: newUserId
-                        }),
+                        body: JSON.stringify({ user_id: newUserId }),
                     });
 
-                    clearInterval(interval);
-                    const result = await resp.json();
+                    if (!resp.body) throw new Error('ReadableStream tidak didukung browser Anda');
 
-                    if (!resp.ok || result.error) {
-                        logEl.textContent += '\n Error: ' + (result.error || 'Unknown error');
-                        if (result.detail) logEl.textContent += '\n' + result.detail;
-                        logEl.scrollTop = logEl.scrollHeight;
-                        return;
+                    const reader = resp.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let buffer = '';
+
+                    const barEl = document.getElementById('progress-bar');
+                    const pctEl = document.getElementById('progress-percent');
+                    const stepEl = document.getElementById('progress-step');
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop(); // simpan baris yang belum lengkap
+
+                        for (const line of lines) {
+                            if (!line.trim()) continue;
+                            try {
+                                const data = JSON.parse(line);
+                                if (data.line) {
+                                    // Deteksi step dari output Python
+                                    if (data.line.includes('[1/5]')) {
+                                        stepEl.textContent = 'Memuat interaksi dari Supabase...';
+                                        barEl.style.width = '10%'; pctEl.textContent = '10%';
+                                    } else if (data.line.includes('[2/5]')) {
+                                        stepEl.textContent = 'Memuat dataset interaksi terbaru...';
+                                        barEl.style.width = '20%'; pctEl.textContent = '20%';
+                                    } else if (data.line.includes('[3/5]')) {
+                                        stepEl.textContent = 'Memperbarui view_count artikel...';
+                                        barEl.style.width = '30%'; pctEl.textContent = '30%';
+                                    } else if (data.line.includes('[4/5]')) {
+                                        stepEl.textContent = 'Menyimpan CSV berversi...';
+                                        barEl.style.width = '40%'; pctEl.textContent = '40%';
+                                    } else if (data.line.includes('[5/5]')) {
+                                        stepEl.textContent = 'Melatih ulang LightGCN...';
+                                        barEl.style.width = '50%'; pctEl.textContent = '50%';
+                                    } else if (data.line.includes('Epoch')) {
+                                        const match = data.line.match(/Epoch\s+(\d+)/);
+                                        if (match) {
+                                            const epoch = parseInt(match[1]);
+                                            // Progress LightGCN dari 50% ke 90%
+                                            const pct = 50 + Math.floor((epoch / 500) * 40);
+                                            barEl.style.width = pct + '%';
+                                            pctEl.textContent = pct + '%';
+                                            stepEl.textContent = 'Melatih LightGCN: Epoch ' + epoch + ' / 500';
+                                        }
+                                    } else if (data.line.includes('[Popularity]')) {
+                                        stepEl.textContent = 'Menghitung Popularity-Based Filtering...';
+                                        barEl.style.width = '95%'; pctEl.textContent = '95%';
+                                    }
+                                } else if (data.success) {
+                                    stepEl.textContent = 'Training selesai!';
+                                    barEl.style.width = '100%'; pctEl.textContent = '100%';
+                                    document.getElementById('loading-spinner').style.display = 'none';
+                                    setTimeout(() => {
+                                        window.location.href = '/homepage';
+                                    }, 1500);
+                                } else if (data.error) {
+                                    stepEl.textContent = 'Error: ' + data.error;
+                                    document.getElementById('loading-spinner').style.borderColor = 'red';
+                                }
+                            } catch (e) {
+                                // Bukan JSON (misal jika ada output unexpected)
+                            }
+                        }
                     }
 
-                    logEl.textContent += '\n Training selesai! Mengalihkan ke homepage...\n';
-                    logEl.scrollTop = logEl.scrollHeight;
-
-                    // Set session cookie agar homepage tahu user_id
-                    setTimeout(() => {
-                        window.location.href = '/homepage';
-                    }, 2000);
-
                 } catch (e) {
-                    clearInterval(interval);
-                    logEl.textContent += '\n Gagal menghubungi server: ' + e.message;
-                    logEl.scrollTop = logEl.scrollHeight;
+                    document.getElementById('progress-step').textContent = 'Error: ' + e.message;
                 }
             });
 

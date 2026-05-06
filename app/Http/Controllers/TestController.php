@@ -47,51 +47,60 @@ class TestController extends Controller
 
         Log::info("[Register] Menjalankan: python test_new_user_pipeline.py --user_id {$userId}");
 
-        // Tulis header ke terminal (STDERR agar muncul di php artisan serve)
-        $stderr = fopen('php://stderr', 'w');
-        fwrite($stderr, "\n" . str_repeat('=', 60) . "\n");
-        fwrite($stderr, "  [Register] Pipeline dimulai — User ID: {$userId}\n");
-        fwrite($stderr, str_repeat('=', 60) . "\n");
-
-        // Jalankan dengan popen agar output muncul REAL-TIME di terminal
-        $handle = popen($cmd, 'r');
-        $logContent = '';
-
-        if ($handle) {
-            while (!feof($handle)) {
-                $line = fgets($handle);
-                if ($line !== false) {
-                    $logContent .= $line;
-                    fwrite($stderr, "  [Python] " . rtrim($line) . "\n");
-                    fflush($stderr);
-                }
-            }
-            $returnCode = pclose($handle);
-        } else {
-            $returnCode = -1;
-            fwrite($stderr, "  [ERROR] Gagal menjalankan Python!\n");
-        }
-
-        fwrite($stderr, "\n  [Register] Pipeline selesai — exit code: {$returnCode}\n");
-        fwrite($stderr, str_repeat('=', 60) . "\n\n");
-        fclose($stderr);
-
-        // Simpan log ke file
-        file_put_contents($logPath, $logContent);
-        Log::info("[Register] Pipeline exit code: {$returnCode}");
-
-        if ($returnCode !== 0) {
-            $safeLog = mb_convert_encoding($logContent, 'UTF-8', 'UTF-8');
-            return response()->json([
-                'error'  => 'Training gagal. Lihat log untuk detail.',
-                'detail' => $safeLog,
-            ], 500);
-        }
-
         // 3. Set session agar homepage tahu siapa yang login
         $request->session()->put('active_user_id', $userId);
 
-        return response()->json(['success' => true, 'user_id' => $userId]);
+        // Stream output ke frontend agar UI bisa parse Epoch 1-500 secara real-time
+        return response()->stream(function () use ($cmd, $userId, $logPath) {
+            $stderr = fopen('php://stderr', 'w');
+            fwrite($stderr, "\n" . str_repeat('=', 60) . "\n");
+            fwrite($stderr, "  [Register] Pipeline dimulai — User ID: {$userId}\n");
+            fwrite($stderr, str_repeat('=', 60) . "\n");
+
+            $handle = popen($cmd, 'r');
+            $logContent = '';
+
+            if ($handle) {
+                while (!feof($handle)) {
+                    $line = fgets($handle);
+                    if ($line !== false) {
+                        $logContent .= $line;
+                        $trimmed = rtrim($line);
+                        
+                        // Output ke terminal
+                        fwrite($stderr, "  [Python] " . $trimmed . "\n");
+                        fflush($stderr);
+                        
+                        // Output ke client (JSON line)
+                        echo json_encode(['line' => $trimmed]) . "\n";
+                        ob_flush();
+                        flush();
+                    }
+                }
+                $returnCode = pclose($handle);
+            } else {
+                $returnCode = -1;
+                fwrite($stderr, "  [ERROR] Gagal menjalankan Python!\n");
+                echo json_encode(['error' => 'Gagal menjalankan Python']) . "\n";
+            }
+
+            fwrite($stderr, "\n  [Register] Pipeline selesai — exit code: {$returnCode}\n");
+            fwrite($stderr, str_repeat('=', 60) . "\n\n");
+            fclose($stderr);
+
+            file_put_contents($logPath, $logContent);
+            Log::info("[Register] Pipeline exit code: {$returnCode}");
+
+            if ($returnCode === 0) {
+                echo json_encode(['success' => true, 'user_id' => $userId]) . "\n";
+            } else {
+                echo json_encode(['error' => 'Training gagal', 'code' => $returnCode]) . "\n";
+            }
+        }, 200, [
+            'Cache-Control' => 'no-cache',
+            'Content-Type'  => 'application/x-ndjson',
+            'X-Accel-Buffering' => 'no', // For Nginx if used
+        ]);
     }
 
     /**
