@@ -24,7 +24,7 @@ ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ENGINE_DIR)
 
 # Import config & client TANPA train modules dulu
-from config import ARTICLE_CSV, BASE_DIR, SAVED_MODELS_DIR, TOP_K
+from config import ARTICLE_CSV, INTERACTIONS_CSV, BASE_DIR, SAVED_MODELS_DIR, TOP_K
 from db_client import supabase_client
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -34,20 +34,20 @@ def get_next_version_paths():
     base_dir = BASE_DIR
     n = 1
     while True:
-        inter = os.path.join(base_dir, f"acu_interactions_customized5({n}).csv")
+        inter = os.path.join(base_dir, f"acu_interactions({n}).csv")
         if not os.path.exists(inter):
-            article = os.path.join(base_dir, f"article_dataset5({n}).csv")
+            article = os.path.join(base_dir, f"article_dataset({n}).csv")
             return inter, article, n
         n += 1
 
 
 def get_latest_article_csv():
     """Ambil file artikel versi terbaru (atau base jika belum ada versi)."""
-    base = os.path.join(BASE_DIR, "article_dataset5.csv")
+    base = ARTICLE_CSV
     n = 1
     last = base
     while True:
-        versioned = os.path.join(BASE_DIR, f"article_dataset5({n}).csv")
+        versioned = os.path.join(BASE_DIR, f"article_dataset({n}).csv")
         if os.path.exists(versioned):
             last = versioned
             n += 1
@@ -58,11 +58,11 @@ def get_latest_article_csv():
 
 def get_latest_interactions_csv():
     """Ambil file interaksi versi terbaru (atau base jika belum ada versi)."""
-    base = os.path.join(BASE_DIR, "acu_interactions_customized5.csv")
+    base = INTERACTIONS_CSV
     n = 1
     last = base
     while True:
-        versioned = os.path.join(BASE_DIR, f"acu_interactions_customized5({n}).csv")
+        versioned = os.path.join(BASE_DIR, f"acu_interactions({n}).csv")
         if os.path.exists(versioned):
             last = versioned
             n += 1

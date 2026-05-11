@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import pandas as pd
 from datetime import datetime
@@ -44,13 +44,13 @@ def seed_users():
             # upsert based on user_id
             client.table("users").upsert(rows).execute()
             total_inserted += len(rows)
-            print(f"  → {total_inserted} users tersimpan...")
+            print(f"  -> {total_inserted} users tersimpan...")
             rows = []
             
     if rows:
         client.table("users").upsert(rows).execute()
         total_inserted += len(rows)
-        print(f"  → {total_inserted} users tersimpan...")
+        print(f"  -> {total_inserted} users tersimpan...")
 
     print(f"[Seeder] Selesai! Sebanyak {total_inserted} user berhasil ditambahkan/diperbarui.")
 

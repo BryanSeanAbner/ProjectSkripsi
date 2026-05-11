@@ -245,6 +245,20 @@
     height: 140px;
     object-fit: cover;
 }
+.view-count-overlay {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 .card-horiz .card-body {
     padding: 15px 20px;
     display: flex;
@@ -445,12 +459,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderCardHoriz(art, getSecName) {
         return `
             <a href="/article/${art.article_id}" class="card-horiz">
-                <img src="${art.photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News">
+                <div style="position: relative; width: 220px; height: 140px; flex-shrink: 0;">
+                    <img src="${art.photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div class="view-count-overlay"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
+                </div>
                 <div class="card-body">
                     <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${getSecName(art.section_id)}</div>
                     <h3 style="font-size:16px; margin-bottom:8px;">${art.title}</h3>
-                    <p style="font-size:13px; color:#666; margin-bottom:10px;">${art.content ? art.content.substring(0, 80) + '...' : ''}</p>
-                    <div style="font-size:11px; color:#999; margin-top:auto;">${new Date(art.publish_date).toLocaleDateString()}</div>
+                    <p style="font-size:13px; color:#666; margin-bottom:10px;">${art.content ? art.content.substring(0, 150) + '...' : ''}</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
+                        <span>${new Date(art.publish_date).toLocaleDateString()}</span>
+                    </div>
                 </div>
             </a>
         `;

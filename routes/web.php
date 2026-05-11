@@ -16,7 +16,8 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth');
 
 // ─── Homepage & Recommendations ────────────────────────────
-Route::get('/homepage', function () {
+Route::get('/homepage', function (\Illuminate\Http\Request $request) {
+    $request->session()->put('base_home_url', '/homepage');
     return view('homepage');
 })->name('homepage');
 
@@ -32,9 +33,26 @@ Route::get('/profile', function () {
     return view('profile');
 })->name('profile');
 
-// ─── Register / Demo Pipeline ────────────────────────────────────────────────
-Route::get('/register',  [\App\Http\Controllers\TestController::class, 'index'])->name('register');
-Route::post('/register/train', [\App\Http\Controllers\TestController::class, 'train'])->name('register.train');
+// ─── Register (Form biasa, tanpa pipeline AI) ──────────────────────────────
+Route::get('/register', function () {
+    return view('register');
+})->name('register');
+
+// POST session setelah register (simpan user_id ke session)
+Route::post('/register/session', function (\Illuminate\Http\Request $request) {
+    $request->session()->put('active_user_id', (int) $request->user_id);
+    return response()->json(['ok' => true]);
+})->name('register.session');
+
+// ─── Welcome Page (Cold-Start, tanpa rekomendasi personal) ────────────────
+Route::get('/welcome', function (\Illuminate\Http\Request $request) {
+    $request->session()->put('base_home_url', '/welcome');
+    return view('welcome');
+})->name('welcome');
+
+// ─── Test / Demo Pipeline ────────────────────────────────────────────────────
+Route::get('/test',  [\App\Http\Controllers\TestController::class, 'index'])->name('test');
+Route::post('/test/train', [\App\Http\Controllers\TestController::class, 'train'])->name('test.train');
 
 // API endpoints untuk Realtime fallback & manual refresh
 Route::prefix('api/recommendations')->group(function () {

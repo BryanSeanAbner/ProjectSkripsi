@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import pandas as pd
 from datetime import datetime
@@ -42,7 +42,7 @@ def seed_all():
     if sec_rows:
         try:
             client.table("section").upsert(sec_rows).execute()
-            print(f" ✓ {len(sec_rows)} sections berhasil disisipkan.")
+            print(f" [OK] {len(sec_rows)} sections berhasil disisipkan.")
         except Exception as e:
             print(f" [X] Error menyisipkan section: {e}")
 
@@ -69,7 +69,7 @@ def seed_all():
             try:
                 client.table("article").upsert(art_rows).execute()
                 art_inserted += len(art_rows)
-                print(f"  → {art_inserted} artikel tersimpan...")
+                print(f"  -> {art_inserted} artikel tersimpan...")
             except Exception as e:
                 print(f"  [X] Error pada batch artikel: {e}")
             art_rows = []
@@ -78,11 +78,11 @@ def seed_all():
         try:
             client.table("article").upsert(art_rows).execute()
             art_inserted += len(art_rows)
-            print(f"  → {art_inserted} artikel tersimpan...")
+            print(f"  -> {art_inserted} artikel tersimpan...")
         except Exception as e:
             print(f"  [X] Error pada sisa artikel: {e}")
 
-    print(f" ✓ {art_inserted} total artikel berhasil disisipkan.")
+    print(f" [OK] {art_inserted} total artikel berhasil disisipkan.")
 
     # 3. Seed User Interactions
     print("\n[Seeder] --- MEMUAT USER INTERACTIONS ---")
@@ -102,7 +102,7 @@ def seed_all():
             try:
                 client.table("user_interaction").upsert(int_rows).execute()
                 int_inserted += len(int_rows)
-                print(f"  → {int_inserted} interaksi tersimpan...")
+                print(f"  -> {int_inserted} interaksi tersimpan...")
             except Exception as e:
                 print(f"  [X] Error pada batch interaksi: {e}")
             int_rows = []
@@ -111,11 +111,11 @@ def seed_all():
         try:
             client.table("user_interaction").upsert(int_rows).execute()
             int_inserted += len(int_rows)
-            print(f"  → {int_inserted} interaksi tersimpan...")
+            print(f"  -> {int_inserted} interaksi tersimpan...")
         except Exception as e:
             print(f"  [X] Error pada sisa interaksi: {e}")
 
-    print(f" ✓ {int_inserted} total interaksi berhasil disisipkan.")
+    print(f" [OK] {int_inserted} total interaksi berhasil disisipkan.")
 
 if __name__ == "__main__":
     seed_all()

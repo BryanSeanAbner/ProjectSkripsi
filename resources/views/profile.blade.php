@@ -178,10 +178,6 @@
                 <h2 style="font-size:20px; font-weight:800; margin-bottom:20px;">Edit Profile</h2>
                 <div style="display:flex; flex-direction:column; gap:15px;">
                     <div>
-                        <label style="font-weight:700; font-size:12px; color:#666;">Photo Profile (URL)</label>
-                        <input type="text" id="edit-photo" placeholder="https://ui-avatars.com/api/?name=User" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
-                    </div>
-                    <div>
                         <label style="font-weight:700; font-size:12px; color:#666;">Username</label>
                         <input type="text" id="edit-username" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
                     </div>
@@ -233,7 +229,6 @@
                     // Fill Settings Inputs
                     document.getElementById('edit-username').value = data.username || '';
                     document.getElementById('edit-email').value = data.email || '';
-                    document.getElementById('edit-photo').value = data.photo_url || '';
                 } else {
                     document.getElementById('profile-username').innerText = userId;
                 }
@@ -405,10 +400,9 @@
             document.getElementById('btn-save-profile').addEventListener('click', async () => {
                 const username = document.getElementById('edit-username').value;
                 const email = document.getElementById('edit-email').value;
-                const photo_url = document.getElementById('edit-photo').value;
                 const password = document.getElementById('edit-password').value;
                 
-                let updateData = { username, email, photo_url };
+                let updateData = { username, email };
                 if(password.trim() !== '') {
                     updateData.password = password;
                 }

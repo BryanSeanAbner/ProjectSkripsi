@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>4.4 Implementasi Aplikasi Web</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.8; color: #000; max-width: 210mm; margin: 0 auto; padding: 25mm 30mm; background: #fff; }
+h2 { font-size: 14pt; font-weight: bold; margin: 24pt 0 12pt; }
+h3 { font-size: 13pt; font-weight: bold; margin: 20pt 0 10pt; }
+h4 { font-size: 12pt; font-weight: bold; margin: 16pt 0 8pt; }
+p { text-align: justify; margin-bottom: 10pt; text-indent: 36pt; }
+p.no-indent { text-indent: 0; }
+ol, ul { margin: 8pt 0 12pt 36pt; }
+li { margin-bottom: 6pt; text-align: justify; }
+li ul, li ol { margin-top: 4pt; margin-bottom: 4pt; }
+table { width: 100%; border-collapse: collapse; margin: 12pt 0; font-size: 11pt; }
+table th, table td { border: 1px solid #000; padding: 6pt 8pt; text-align: left; }
+table th { background: #f0f0f0; font-weight: bold; }
+.page-break { page-break-before: always; }
+@media print {
+  body { padding: 0; margin: 0; }
+  .no-print { display: none; }
+}
+.btn-print { position: fixed; top: 20px; right: 20px; background: #170b3b; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; z-index: 999; }
+.btn-print:hover { background: #2a1760; }
+</style>
+</head>
+<body>
+
+<button class="btn-print no-print" onclick="window.print()">💾 Simpan sebagai PDF</button>
+
+<h2>4.4 Implementasi Aplikasi Web</h2>
+
+<p>Subbab ini menjelaskan implementasi prototipe aplikasi web berita digital yang berfungsi sebagai <i>proof-of-concept</i> sistem rekomendasi anti-FOMO. Aplikasi dibangun menggunakan framework Laravel 11 sebagai backend dan Supabase (PostgreSQL cloud) sebagai basis data utama, dengan <i>pipeline</i> machine learning berbasis Python yang terintegrasi secara end-to-end. Arsitektur ini dipilih untuk memisahkan <i>concern</i> antara penyajian antarmuka (Laravel), penyimpanan data (Supabase), dan komputasi model rekomendasi (Python), sehingga masing-masing komponen dapat dikembangkan dan diuji secara independen.</p>
+
+<h3>4.4.1 Arsitektur Sistem dan Teknologi yang Digunakan</h3>
+
+<p>Bagian ini mendeskripsikan arsitektur keseluruhan sistem dan justifikasi pemilihan setiap komponen teknologi. Sistem dibangun dengan pendekatan arsitektur tiga-lapis (<i>Three-Tier Architecture</i>) sebagai berikut:</p>
+
+<ol>
+<li><b>Presentation Layer (Frontend):</b> Laravel Blade templating engine digunakan bersama Vanilla JavaScript dan Supabase JS Client untuk <i>real-time data fetching</i>. Pendekatan <i>Server-Side Rendering</i> (SSR) via Blade dipilih agar halaman cepat dimuat, sementara data rekomendasi yang dinamis di-<i>fetch</i> secara asinkron oleh JavaScript setelah halaman ter-<i>render</i>.</li>
+
+<li><b>Application Layer (Backend):</b> Laravel 11 menangani routing, autentikasi, session management, dan orkestrasi pipeline Python. Controller Laravel bertindak sebagai <i>orchestrator</i> yang memicu proses training model via <code>popen()</code>.</li>
+
+<li><b>Data Layer:</b> Supabase (PostgreSQL cloud) menyimpan seluruh data &mdash; <code>users</code>, <code>article</code>, <code>section</code>, <code>user_interaction</code>, <code>user_bookmarks</code>, serta tabel hasil rekomendasi (<code>top_trending</code>, <code>recommendation_history</code>, <code>article_similarity</code>).</li>
+</ol>
+
+<h4>Justifikasi Pemilihan Teknologi</h4>
+<ul>
+<li><b>Laravel:</b> Dipilih karena ekosistem PHP yang matang, kemudahan routing dan session management, serta kompatibilitas dengan lingkungan hosting Indonesia.</li>
+<li><b>Supabase:</b> Dipilih sebagai pengganti MySQL lokal untuk mengatasi kendala koneksi IPv6 di lingkungan pengembangan (Laragon), sekaligus menyediakan fitur <i>real-time subscription</i> via WebSocket.</li>
+<li><b>Python (terpisah):</b> Ekosistem machine learning Python (PyTorch, scikit-learn, pandas) jauh lebih matang dibanding PHP, sehingga pipeline training dan inference dijalankan sebagai proses terpisah yang dipanggil oleh Laravel.</li>
+</ul>
+
+<h3>4.4.2 Struktur Data dan Skema Basis Data</h3>
+
+<p>Rancangan tabel-tabel di Supabase dirancang untuk mendukung alur <i>cold-start</i> dan <i>warm-start</i>. Berikut adalah deskripsi setiap tabel yang digunakan dalam sistem:</p>
+
+<table>
+<tr><th>No</th><th>Nama Tabel</th><th>Deskripsi</th><th>Kolom Utama</th></tr>
+<tr><td>1</td><td><code>users</code></td><td>Data pengguna</td><td>user_id, username, email, password, gender, age</td></tr>
+<tr><td>2</td><td><code>article</code></td><td>Dataset berita</td><td>article_id, title, content, section_id, photo_url, publish_date, view_count</td></tr>
+<tr><td>3</td><td><code>section</code></td><td>Kategori berita</td><td>section_id, section_name</td></tr>
+<tr><td>4</td><td><code>user_interaction</code></td><td>Histori baca (implicit feedback)</td><td>interaction_id, user_id, article_id</td></tr>
+<tr><td>5</td><td><code>top_trending</code></td><td>Output Popularity-Based Filtering</td><td>user_id, article_id, score, rank_position</td></tr>
+<tr><td>6</td><td><code>recommendation_history</code></td><td>Output LightGCN</td><td>user_id, article_id, score, rank_position</td></tr>
+<tr><td>7</td><td><code>article_similarity</code></td><td>Output Content-Based Filtering (TF-IDF)</td><td>article_id, similar_article_id, similarity_score, rank_position</td></tr>
+<tr><td>8</td><td><code>user_bookmarks</code></td><td>Artikel yang disimpan pengguna</td><td>user_id, article_id</td></tr>
+</table>
+
+<h3>4.4.3 Alur Autentikasi dan Manajemen Sesi</h3>
+
+<p>Sistem autentikasi bertanggung jawab untuk mengidentifikasi pengguna dan menentukan pendekatan rekomendasi yang sesuai (<i>cold-start</i> vs. <i>warm-start</i>).</p>
+
+<ol>
+<li><b>Halaman Login (<code>/login</code>):</b> Pengguna memasukkan email dan password. Laravel <code>AuthController</code> memverifikasi kredensial terhadap tabel <code>users</code> di Supabase via REST API. Sistem mendukung verifikasi password <i>plain text</i> (untuk user baru dari <code>/register</code>) maupun <i>bcrypt hash</i> (untuk user dari dataset asli). Setelah login berhasil, <code>user_id</code> disimpan ke session Laravel dan pengguna diarahkan ke <code>/homepage</code> (warm-start).</li>
+
+<li><b>Halaman Register (<code>/register</code>):</b> Pengguna baru mendaftar melalui form registrasi (username, email, password, gender, usia). Data disimpan ke tabel <code>users</code> di Supabase via Supabase JS Client. Setelah registrasi berhasil, pengguna diarahkan ke <code>/welcome</code> &mdash; halaman cold-start yang hanya menampilkan rekomendasi non-personalized.</li>
+
+<li><b>Penentuan Rute Berdasarkan Status Pengguna:</b>
+<ul>
+<li>Pengguna baru (belum memiliki interaksi) &rarr; <code>/welcome</code> &rarr; cold-start, rekomendasi berbasis popularitas global.</li>
+<li>Pengguna lama (sudah memiliki riwayat interaksi) &rarr; <code>/homepage</code> &rarr; warm-start, rekomendasi personal dari LightGCN.</li>
+</ul>
+</li>
+</ol>
+
+<h3>4.4.4 Implementasi Rekomendasi Non-Personalized (Cold-Start)</h3>
+
+<p>Bagian ini menjelaskan bagaimana sistem menangani <i>cold-start problem</i> &mdash; yaitu situasi ketika pengguna baru belum memiliki riwayat interaksi sehingga model personalized tidak dapat menghasilkan rekomendasi.</p>
+
+<ol>
+<li><b>Strategi Cold-Start: Popularity-Based Filtering.</b> Ketika pengguna baru masuk melalui <code>/register</code> ke <code>/welcome</code>, sistem belum memiliki data interaksi untuk pengguna tersebut. Halaman <code>/welcome</code> menampilkan berita berdasarkan popularitas global (diurutkan berdasarkan <code>view_count</code> tertinggi) dan kronologi terbaru (<code>publish_date</code> descending). Pendekatan ini menggunakan prinsip <i>wisdom of the crowd</i> &mdash; artikel yang paling banyak dibaca oleh seluruh pengguna diasumsikan memiliki relevansi tinggi secara umum.</li>
+
+<li><b>Tampilan Halaman <code>/welcome</code>:</b>
+<ul>
+<li><b>Hero Section:</b> Menampilkan 1 artikel utama dengan gambar besar beserta 3 sub-artikel.</li>
+<li><b>Sidebar Terpopuler:</b> Top-5 artikel berdasarkan <code>view_count</code> tertinggi secara global.</li>
+<li><b>Feed Terkini:</b> Daftar artikel terbaru berdasarkan tanggal publikasi, dilengkapi gambar dan metadata (view count dengan icon mata overlay).</li>
+</ul>
+</li>
+
+<li><b>Transisi dari Cold-Start ke Warm-Start:</b> Setiap kali pengguna membuka halaman artikel (<code>/article/{id}</code>), sistem secara otomatis mencatat interaksi ke tabel <code>user_interaction</code>. Setelah akumulasi interaksi cukup, pengguna dapat di-<i>retrain</i> sehingga beralih dari cold-start ke warm-start.</li>
+</ol>
+
+<h3>4.4.5 Implementasi Rekomendasi Personalized (Warm-Start)</h3>
+
+<p>Bagian ini menjelaskan bagaimana sistem menyajikan rekomendasi yang dipersonalisasi untuk pengguna yang sudah memiliki riwayat interaksi.</p>
+
+<ol>
+<li><b>Halaman Homepage (<code>/homepage</code>).</b> Setelah login, pengguna dengan riwayat interaksi diarahkan ke <code>/homepage</code> yang menampilkan tiga jenis rekomendasi:
+<ul>
+<li><b>Berita Terkini (Beranda):</b> Artikel terbaru berdasarkan <code>publish_date</code>.</li>
+<li><b>Terpopuler (Sidebar):</b> Top-5 artikel trending per-user dari tabel <code>top_trending</code> &mdash; hasil Popularity-Based Filtering yang mempertimbangkan section preference pengguna.</li>
+<li><b>Rekomendasi untuk Kamu (Sidebar):</b> Top-5 artikel personal dari tabel <code>recommendation_history</code> &mdash; hasil model LightGCN.</li>
+</ul>
+</li>
+
+<li><b>Model yang Digunakan untuk Warm-Start:</b>
+<ul>
+<li><b>LightGCN (Light Graph Convolutional Network):</b> Dipilih sebagai model personalized utama berdasarkan hasil evaluasi performa. LightGCN memodelkan relasi user-item sebagai graph bipartite dan menggunakan <i>neighborhood aggregation</i> untuk mempelajari embedding user dan item.</li>
+<li><b>Content-Based Filtering (TF-IDF):</b> Digunakan untuk fitur &ldquo;Berita Serupa&rdquo; di halaman detail artikel (<code>/article/{id}</code>), menampilkan artikel dengan konten paling mirip berdasarkan cosine similarity dari vektor TF-IDF.</li>
+</ul>
+</li>
+
+<li><b>Real-Time Update via Supabase Channel:</b> Frontend menggunakan Supabase Realtime (WebSocket) untuk mendengarkan perubahan pada tabel <code>recommendation_history</code> dan <code>top_trending</code>. Ketika pipeline selesai meng-<i>insert</i> rekomendasi baru, UI secara otomatis ter-update tanpa perlu refresh halaman.</li>
+</ol>
+
+<div class="page-break"></div>
+
+<h3>4.4.6 Integrasi Pipeline Python&ndash;Laravel</h3>
+
+<p>Bagian ini menjelaskan mekanisme teknis bagaimana Laravel memanggil pipeline machine learning Python dan bagaimana hasilnya dikembalikan ke antarmuka pengguna.</p>
+
+<ol>
+<li><b>Arsitektur Integrasi:</b> Laravel tidak menjalankan model ML secara langsung. Sebagai gantinya, <code>TestController</code> memanggil script Python (<code>test_new_user_pipeline.py</code>) sebagai <i>child process</i> menggunakan <code>popen()</code>. Output Python di-<i>stream</i> secara real-time ke frontend dalam format NDJSON (<i>Newline-Delimited JSON</i>), memungkinkan UI menampilkan progress training secara live.</li>
+
+<li><b>Pipeline Training untuk User Baru (Halaman <code>/test</code>):</b>
+<ul>
+<li><b>Step 1 &mdash; Registrasi:</b> User baru memasukkan data diri (username, email, password, gender, usia) yang disimpan ke Supabase.</li>
+<li><b>Step 2 &mdash; Pilih Artikel:</b> User memilih minimal 2 artikel dari katalog, interaksi disimpan ke tabel <code>user_interaction</code>.</li>
+<li><b>Step 3 &mdash; Training &amp; Inference:</b> Laravel memicu <code>test_new_user_pipeline.py</code> yang menjalankan: (1) mengambil interaksi user baru dari Supabase, (2) menggabungkan dengan dataset interaksi existing, (3) re-training model LightGCN, (4) menjalankan inference Popularity, CBF, dan LightGCN, (5) menyimpan hasil rekomendasi ke Supabase.</li>
+</ul>
+</li>
+
+<li><b>Batch Inference untuk User Existing:</b> Script <code>train_all.py</code> dan <code>batch_inference.py</code> digunakan untuk melatih semua model sekaligus dan meng-generate rekomendasi untuk seluruh user secara batch. Script <code>reset_and_retrain.py</code> menyediakan tiga mode operasi: default (reset rekomendasi + retrain), <code>--full</code> (reset semua + seed ulang + retrain), dan <code>--clean-only</code> (hanya bersihkan tabel).</li>
+</ol>
+
+<h3>4.4.7 Antarmuka Pengguna (User Interface)</h3>
+
+<p>Antarmuka dirancang menyerupai portal berita digital ntvnews.id sebagai referensi visual untuk pemangku kepentingan Nusantara TV. Menggunakan skema warna konsisten: dark purple (<code>#170b3b</code>) untuk elemen utama, kuning (<code>#ffb400</code>) untuk aksen, dan putih untuk card/konten.</p>
+
+<table>
+<tr><th>Halaman</th><th>Fungsi</th><th>Pendekatan Rekomendasi</th></tr>
+<tr><td><code>/login</code></td><td>Autentikasi pengguna terdaftar</td><td>&mdash;</td></tr>
+<tr><td><code>/register</code></td><td>Registrasi pengguna baru</td><td>&mdash;</td></tr>
+<tr><td><code>/welcome</code></td><td>Homepage cold-start</td><td>Non-personalized (Popularity global)</td></tr>
+<tr><td><code>/homepage</code></td><td>Homepage warm-start</td><td>Personalized (LightGCN + Popularity per-user)</td></tr>
+<tr><td><code>/article/{id}</code></td><td>Detail artikel + Berita Serupa</td><td>Content-Based Filtering (TF-IDF)</td></tr>
+<tr><td><code>/section/{id}</code></td><td>Daftar artikel per kategori</td><td>Kronologis + view count</td></tr>
+<tr><td><code>/profile</code></td><td>Profil, bookmark, histori baca</td><td>&mdash;</td></tr>
+<tr><td><code>/test</code></td><td>Demo pipeline end-to-end</td><td>Full pipeline (register &rarr; train &rarr; inference)</td></tr>
+</table>
+
+<h3>4.4.8 Halaman Demo Pipeline (<code>/test</code>)</h3>
+
+<p>Halaman <code>/test</code> dirancang khusus sebagai <i>proof-of-concept</i> yang memungkinkan pemangku kepentingan menyaksikan secara langsung bagaimana sistem rekomendasi bekerja &mdash; dari pembuatan user baru hingga munculnya rekomendasi personal.</p>
+
+<ol>
+<li><b>Alur Demo 3 Langkah (Step Wizard):</b>
+<ul>
+<li><b>Step 1 &mdash; Registrasi:</b> Form input data diri langsung terhubung ke Supabase.</li>
+<li><b>Step 2 &mdash; Simulasi Interaksi:</b> Pengguna memilih artikel dari katalog (<i>searchable list</i> dengan view count). Minimal 2 artikel harus dipilih sebagai <i>seed interaction</i>.</li>
+<li><b>Step 3 &mdash; Training Live:</b> Progress bar dan log real-time menampilkan proses training model (Popularity &rarr; CBF &rarr; LightGCN). Setelah selesai, otomatis redirect ke <code>/homepage</code> dengan rekomendasi personal.</li>
+</ul>
+</li>
+
+<li><b>Nilai Demonstrasi:</b> Menunjukkan transisi cold-start ke warm-start secara visual dan terukur, serta memberikan <i>tangible evidence</i> bahwa pipeline ML dapat diintegrasikan ke dalam platform berita digital existing.</li>
+</ol>
+
+<h3>4.4.9 Fitur Pendukung</h3>
+
+<p>Beberapa fitur tambahan melengkapi pengalaman pengguna dan mendukung pengumpulan data untuk model rekomendasi:</p>
+
+<ol>
+<li><b>Bookmark / Simpan Artikel:</b> Pengguna dapat menyimpan artikel ke bookmark melalui ikon bookmark di halaman detail artikel. Artikel yang di-bookmark dapat dilihat kembali di halaman <code>/profile</code> pada tab &ldquo;Saved Articles&rdquo;.</li>
+
+<li><b>Pencatatan Histori Baca Otomatis:</b> Setiap kali pengguna membuka halaman detail artikel, sistem secara otomatis menyimpan interaksi ke tabel <code>user_interaction</code> &mdash; menjadi <i>implicit feedback</i> yang digunakan oleh model rekomendasi.</li>
+
+<li><b>Profil Pengguna (<code>/profile</code>):</b> Terdiri dari tiga tab utama: Saved Articles (grid kartu artikel yang telah di-bookmark), Reading History (daftar artikel yang pernah dibaca secara kronologis), dan Settings (form edit profil yang tersinkronisasi ke Supabase).</li>
+
+<li><b>Navigasi Kategori Dinamis:</b> Header menampilkan link navigasi per kategori berita (Beranda, News, Hiburan, Ekonomi, Olahraga, Otomotif) yang di-<i>generate</i> secara dinamis dari tabel <code>section</code> di Supabase.</li>
+</ol>
+
+</body>
+</html>

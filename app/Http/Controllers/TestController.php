@@ -9,19 +9,19 @@ use Illuminate\Support\Facades\Log;
 class TestController extends Controller
 {
     /**
-     * Tampilkan halaman /register
+     * Tampilkan halaman /test
      */
     public function index()
     {
-        return view('register');
+        return view('test');
     }
 
     /**
      * Simpan interaksi artikel user baru ke tabel user_interaction,
      * lalu jalankan Python pipeline dan redirect ke /homepage.
      *
-     * POST /register/train
-     * Body JSON: { "user_id": 3050, "article_ids": [101, 205, 310] }
+     * POST /test/train
+     * Body JSON: { "user_id": 3050 }
      */
     public function train(Request $request)
     {
@@ -45,7 +45,7 @@ class TestController extends Controller
                '--user_id ' . $userId .
                ' 2>&1';
 
-        Log::info("[Register] Menjalankan: python test_new_user_pipeline.py --user_id {$userId}");
+        Log::info("[Test] Menjalankan: python test_new_user_pipeline.py --user_id {$userId}");
 
         // 3. Set session agar homepage tahu siapa yang login
         $request->session()->put('active_user_id', $userId);
@@ -54,7 +54,7 @@ class TestController extends Controller
         return response()->stream(function () use ($cmd, $userId, $logPath) {
             $stderr = fopen('php://stderr', 'w');
             fwrite($stderr, "\n" . str_repeat('=', 60) . "\n");
-            fwrite($stderr, "  [Register] Pipeline dimulai — User ID: {$userId}\n");
+            fwrite($stderr, "  [Test] Pipeline dimulai — User ID: {$userId}\n");
             fwrite($stderr, str_repeat('=', 60) . "\n");
 
             $handle = popen($cmd, 'r');
@@ -84,12 +84,12 @@ class TestController extends Controller
                 echo json_encode(['error' => 'Gagal menjalankan Python']) . "\n";
             }
 
-            fwrite($stderr, "\n  [Register] Pipeline selesai — exit code: {$returnCode}\n");
+            fwrite($stderr, "\n  [Test] Pipeline selesai — exit code: {$returnCode}\n");
             fwrite($stderr, str_repeat('=', 60) . "\n\n");
             fclose($stderr);
 
             file_put_contents($logPath, $logContent);
-            Log::info("[Register] Pipeline exit code: {$returnCode}");
+            Log::info("[Test] Pipeline exit code: {$returnCode}");
 
             if ($returnCode === 0) {
                 echo json_encode(['success' => true, 'user_id' => $userId]) . "\n";

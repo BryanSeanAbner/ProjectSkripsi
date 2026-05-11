@@ -22,8 +22,8 @@ DB_URL      = (
 
 # ─── File Paths ───────────────────────────────────────────────────────────────
 BASE_DIR          = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ARTICLE_CSV       = os.environ.get('OVERRIDE_ARTICLE_CSV',      os.path.join(BASE_DIR, "article_dataset5.csv"))
-INTERACTIONS_CSV  = os.environ.get('OVERRIDE_INTERACTIONS_CSV', os.path.join(BASE_DIR, "acu_interactions_customized5.csv"))
+ARTICLE_CSV       = os.environ.get('OVERRIDE_ARTICLE_CSV',      os.path.join(BASE_DIR, "article_dataset.csv"))
+INTERACTIONS_CSV  = os.environ.get('OVERRIDE_INTERACTIONS_CSV', os.path.join(BASE_DIR, "acu_interactions.csv"))
 SAVED_MODELS_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saved_models")
 
 # Create saved_models directory if not exists

@@ -107,10 +107,26 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
 
-        .card-sm img {
-            width: 100%;
+        .card-horiz img {
+            width: 220px;
             height: 140px;
             object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .view-count-overlay {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .card-sm .card-body {
@@ -298,6 +314,7 @@
             font-size: 12px;
             color: var(--text-muted);
         }
+
         .btn-load-more {
             display: block;
             width: 100%;
@@ -314,6 +331,7 @@
             text-transform: uppercase;
             transition: background 0.3s;
         }
+
         .btn-load-more:hover {
             background: #e0e0e0;
         }
@@ -382,13 +400,13 @@
             // Jika ada parameter pencarian, sembunyikan dashboard normal dan tampilkan hasil pencarian
             if (searchQuery) {
                 dashboardContainer.innerHTML = `
-                    <div style="margin-bottom: 30px;">
-                        <h2 style="font-size:24px; font-weight:800;">Hasil Pencarian untuk: <span style="color:var(--accent);">${searchQuery}</span></h2>
-                    </div>
-                    <div class="news-list-horiz" id="search-results-list">
-                        <div style="text-align:center; padding:50px;">Sedang mencari...</div>
-                    </div>
-                `;
+                        <div style="margin-bottom: 30px;">
+                            <h2 style="font-size:24px; font-weight:800;">Hasil Pencarian untuk: <span style="color:var(--accent);">${searchQuery}</span></h2>
+                        </div>
+                        <div class="news-list-horiz" id="search-results-list">
+                            <div style="text-align:center; padding:50px;">Sedang mencari...</div>
+                        </div>
+                    `;
 
                 if (!supabaseClient) return;
                 const { data, error } = await supabaseClient
@@ -403,19 +421,21 @@
                     let html = '';
                     data.forEach(art => {
                         html += `
-                            <a href="/article/${art.article_id}" class="card-horiz">
-                                <img src="${art.photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News">
-                                <div class="card-body">
-                                    <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${window.getSectionName ? window.getSectionName(art.section_id) : art.section_id}</div>
-                                    <h3 style="font-size:16px; margin-bottom:8px;">${art.title}</h3>
-                                    <p style="font-size:13px; color:#666; margin-bottom:10px;">${art.content ? art.content.substring(0, 150) + '...' : ''}</p>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
-                                        <span>${new Date(art.publish_date).toLocaleDateString()}</span>
-                                        <span><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</span>
+                                <a href="/article/${art.article_id}" class="card-horiz">
+                                    <div style="position: relative; width: 220px; height: 140px; flex-shrink: 0;">
+                                        <img src="${art.photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="view-count-overlay"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
                                     </div>
-                                </div>
-                            </a>
-                        `;
+                                    <div class="card-body">
+                                        <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${window.getSectionName ? window.getSectionName(art.section_id) : art.section_id}</div>
+                                        <h3 style="font-size:16px; margin-bottom:8px;">${art.title}</h3>
+                                        <p style="font-size:13px; color:#666; margin-bottom:10px;">${art.content ? art.content.substring(0, 150) + '...' : ''}</p>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
+                                            <span>${new Date(art.publish_date).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            `;
                     });
                     list.innerHTML = html;
                 } else {
@@ -441,37 +461,39 @@
                     // Render Hero (artikel teratas)
                     const hero = data[0];
                     document.getElementById('hero-top-article').innerHTML = `
-                    <a href="/article/${hero.article_id}" class="hero-top-card" style="display:block">
-                        <img src="${hero.photo_url || 'https://via.placeholder.com/800x400?text=News'}" alt="News">
-                        <div class="overlay">
-                            <div class="tag">${getSecName(hero.section_id)}</div>
-                            <h1>${hero.title}</h1>
-                            <p>${hero.content ? hero.content.substring(0, 100) + '...' : ''}</p>
-                            <div class="meta" style="display:flex; gap:15px; align-items:center;">
-                                <span>${new Date(hero.publish_date).toLocaleDateString()}</span>
-                                <span><i class="fa-regular fa-eye"></i> ${hero.view_count || 0}</span>
+                        <a href="/article/${hero.article_id}" class="hero-top-card" style="display:block">
+                            <img src="${hero.photo_url || 'https://via.placeholder.com/800x400?text=News'}" alt="News">
+                            <div class="overlay">
+                                <div class="tag">${getSecName(hero.section_id)}</div>
+                                <h1>${hero.title}</h1>
+                                <p>${hero.content ? hero.content.substring(0, 100) + '...' : ''}</p>
+                                <div class="meta" style="display:flex; gap:15px; align-items:center;">
+                                    <span>${new Date(hero.publish_date).toLocaleDateString()}</span>
+                                    <span><i class="fa-regular fa-eye"></i> ${hero.view_count || 0}</span>
+                                </div>
                             </div>
-                        </div>
-                    </a>
-                `;
+                        </a>
+                    `;
 
                     // Render 3 Card Sub Hero
                     let subHtml = '';
                     for (let i = 1; i <= 3; i++) {
                         if (data[i]) {
                             subHtml += `
-                            <a href="/article/${data[i].article_id}" class="card-sm">
-                                <img src="${data[i].photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News">
-                                <div class="card-body">
-                                    <div class="tag">${getSecName(data[i].section_id)}</div>
-                                    <h3>${data[i].title}</h3>
-                                    <div class="card-footer">
-                                        <span>${new Date(data[i].publish_date).toLocaleDateString()}</span>
-                                        <span><i class="fa-regular fa-eye"></i> ${data[i].view_count || 0}</span>
+                                <a href="/article/${data[i].article_id}" class="card-sm">
+                                    <div style="position: relative; width: 100%; height: 140px;">
+                                        <img src="${data[i].photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="view-count-overlay"><i class="fa-regular fa-eye"></i> ${data[i].view_count || 0}</div>
                                     </div>
-                                </div>
-                            </a>
-                        `;
+                                    <div class="card-body">
+                                        <div class="tag">${getSecName(data[i].section_id)}</div>
+                                        <h3>${data[i].title}</h3>
+                                        <div class="card-footer">
+                                            <span>${new Date(data[i].publish_date).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            `;
                         }
                     }
                     document.getElementById('hero-sub-articles').innerHTML = subHtml;
@@ -481,19 +503,21 @@
                     for (let i = 4; i < 10; i++) {
                         if (data[i]) {
                             horizHtml += `
-                            <a href="/article/${data[i].article_id}" class="card-horiz">
-                                <img src="${data[i].photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News">
-                                <div class="card-body">
-                                    <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${getSecName(data[i].section_id)}</div>
-                                    <h3 style="font-size:16px; margin-bottom:8px;">${data[i].title}</h3>
-                                    <p style="font-size:13px; color:#666; margin-bottom:10px;">${data[i].content ? data[i].content.substring(0, 80) + '...' : ''}</p>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
-                                        <span>${new Date(data[i].publish_date).toLocaleDateString()}</span>
-                                        <span><i class="fa-regular fa-eye"></i> ${data[i].view_count || 0}</span>
+                                <a href="/article/${data[i].article_id}" class="card-horiz">
+                                    <div style="position: relative; width: 220px; height: 140px; flex-shrink: 0;">
+                                        <img src="${data[i].photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="view-count-overlay"><i class="fa-regular fa-eye"></i> ${data[i].view_count || 0}</div>
                                     </div>
-                                </div>
-                            </a>
-                        `;
+                                    <div class="card-body">
+                                        <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${getSecName(data[i].section_id)}</div>
+                                        <h3 style="font-size:16px; margin-bottom:8px;">${data[i].title}</h3>
+                                        <p style="font-size:13px; color:#666; margin-bottom:10px;">${data[i].content ? data[i].content.substring(0, 80) + '...' : ''}</p>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
+                                            <span>${new Date(data[i].publish_date).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            `;
                         }
                     }
                     document.getElementById('terkini-list').innerHTML = horizHtml;
@@ -525,15 +549,15 @@
 
                             const badge = getSecName(art.section_id);
                             html += `
-                            <a href="/article/${art.article_id}" class="popular-item" style="display:flex">
-                                <div class="number">${item.rank_position}</div>
-                                <div class="details">
-                                    <div class="tag">${badge}</div>
-                                    <h4>${art.title}</h4>
-                                    <div style="font-size:11px; color:#999; margin-top:4px;"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
-                                </div>
-                            </a>
-                        `;
+                                <a href="/article/${art.article_id}" class="popular-item" style="display:flex">
+                                    <div class="number">${item.rank_position}</div>
+                                    <div class="details">
+                                        <div class="tag">${badge}</div>
+                                        <h4>${art.title}</h4>
+                                        <div style="font-size:11px; color:#999; margin-top:4px;"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
+                                    </div>
+                                </a>
+                            `;
                         });
                         document.getElementById('popular-list').innerHTML = html;
                     }
@@ -565,26 +589,16 @@
 
                             const badge = getSecName(art.section_id);
 
-                            if (index === 0) {
-                                html += `
-                                <a href="/article/${art.article_id}" class="card-recommendation">
-                                    <img src="${art.photo_url || 'https://via.placeholder.com/400x250?text=Recs'}" alt="Rec">
-                                    <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${badge}</div>
-                                    <h4 style="font-size:15px; font-weight:700;">${art.title}</h4>
-                                    <div style="font-size:11px; color:#999; margin-top:5px;"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
-                                </a>
-                            `;
-                            } else {
-                                html += `
-                                <a href="/article/${art.article_id}" class="card-recommendation" style="flex-direction:row; gap:15px; align-items:center;">
-                                    <div style="flex:1;">
+                            html += `
+                                    <a href="/article/${art.article_id}" class="card-recommendation">
+                                        <div style="position: relative; width: 100%; height: 150px; margin-bottom: 12px;">
+                                            <img src="${art.photo_url || 'https://via.placeholder.com/400x250?text=Recs'}" alt="Rec" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; margin-bottom: 0;">
+                                            <div class="view-count-overlay"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
+                                        </div>
                                         <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${badge}</div>
-                                        <h4 style="font-size:13px; line-height:1.4; font-weight:600;">${art.title}</h4>
-                                        <div style="font-size:11px; color:#999; margin-top:4px;"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
-                                    </div>
-                                </a>
-                            `;
-                            }
+                                        <h4 style="font-size:15px; font-weight:700;">${art.title}</h4>
+                                    </a>
+                                `;
                         });
                         document.getElementById('recommendation-list').innerHTML = html;
                     }
@@ -625,19 +639,21 @@
                         let moreHtml = '';
                         moreArticles.forEach(art => {
                             moreHtml += `
-                                <a href="/article/${art.article_id}" class="card-horiz">
-                                    <img src="${art.photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News">
-                                    <div class="card-body">
-                                        <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${getSecName(art.section_id)}</div>
-                                        <h3 style="font-size:16px; margin-bottom:8px;">${art.title}</h3>
-                                        <p style="font-size:13px; color:#666; margin-bottom:10px;">${art.content ? art.content.substring(0, 80) + '...' : ''}</p>
-                                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
-                                            <span>${new Date(art.publish_date).toLocaleDateString()}</span>
-                                            <span><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</span>
+                                    <a href="/article/${art.article_id}" class="card-horiz">
+                                        <div style="position: relative; width: 220px; height: 140px; flex-shrink: 0;">
+                                            <img src="${art.photo_url || 'https://via.placeholder.com/400x300?text=News'}" alt="News" style="width: 100%; height: 100%; object-fit: cover;">
+                                            <div class="view-count-overlay"><i class="fa-regular fa-eye"></i> ${art.view_count || 0}</div>
                                         </div>
-                                    </div>
-                                </a>
-                            `;
+                                        <div class="card-body">
+                                            <div class="tag" style="color:var(--accent); font-weight:700; font-size:10px; margin-bottom:5px; text-transform:uppercase;">${getSecName(art.section_id)}</div>
+                                            <h3 style="font-size:16px; margin-bottom:8px;">${art.title}</h3>
+                                            <p style="font-size:13px; color:#666; margin-bottom:10px;">${art.content ? art.content.substring(0, 80) + '...' : ''}</p>
+                                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#999; margin-top:auto;">
+                                                <span>${new Date(art.publish_date).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                `;
                         });
                         document.getElementById('terkini-list').insertAdjacentHTML('beforeend', moreHtml);
                         currentOffset += moreArticles.length;

@@ -2,8 +2,7 @@
 
 @section('styles')
     <style>
-        /* ─── Base (sama dengan /login) ─────────────────────────────── */
-        .test-page {
+        .register-page {
             min-height: 100vh;
             background: linear-gradient(135deg, #f5f7fa 0%, #e8edf2 100%);
             display: flex;
@@ -12,106 +11,53 @@
             padding: 40px 20px;
         }
 
-        .test-card {
-            background: #fff;
+        .register-card {
+            background: #ffffff;
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.10);
-            padding: 50px 48px;
+            padding: 48px 44px;
             width: 100%;
-            max-width: 560px;
+            max-width: 480px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+            color: var(--text-main);
         }
 
-        .test-logo {
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--bg-primary);
+        .register-logo {
             text-align: center;
-            margin-bottom: 4px;
-            letter-spacing: -1px;
+            margin-bottom: 6px;
         }
 
-        .test-logo span {
-            color: var(--accent);
+        .register-logo img {
+            height: 35px;
         }
 
-        .test-subtitle {
-            text-align: center;
+        .register-subtitle {
             font-size: 11px;
+            text-align: center;
             color: var(--text-muted);
             letter-spacing: 2px;
             text-transform: uppercase;
+            margin-bottom: 36px;
+        }
+
+        .register-card h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .register-card .sub {
+            font-size: 13px;
+            color: var(--text-muted);
             margin-bottom: 28px;
         }
 
-        /* ─── Step Progress ──────────────────────────────────────────── */
-        .step-progress {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            margin-bottom: 32px;
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
         }
 
-        .step-dot {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #e8edf2;
-            color: #999;
-            font-weight: 800;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-
-        .step-dot.active {
-            background: var(--bg-primary);
-            color: #fff;
-        }
-
-        .step-dot.done {
-            background: var(--accent);
-            color: var(--bg-primary);
-        }
-
-        .step-line {
-            flex: 1;
-            height: 2px;
-            background: #e8edf2;
-            transition: background 0.3s;
-            max-width: 60px;
-        }
-
-        .step-line.done {
-            background: var(--accent);
-        }
-
-        /* ─── Step Panels ───────────────────────────────────────────── */
-        .step-panel {
-            display: none;
-        }
-
-        .step-panel.active {
-            display: block;
-        }
-
-        .step-title {
-            font-size: 22px;
-            font-weight: 800;
-            margin-bottom: 6px;
-            color: var(--bg-primary);
-        }
-
-        .step-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 24px;
-        }
-
-        /* ─── Form ──────────────────────────────────────────────────── */
         .form-group {
             margin-bottom: 18px;
         }
@@ -121,101 +67,33 @@
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 12px 14px;
-            border: 1.5px solid #e0e0e0;
+            border: 1.5px solid var(--border-color);
             border-radius: 8px;
             font-size: 14px;
-            transition: border-color 0.2s;
+            font-family: inherit;
+            color: var(--text-main);
+            background: #fafafa;
+            transition: border-color 0.2s, background 0.2s;
             box-sizing: border-box;
         }
 
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             outline: none;
             border-color: var(--bg-primary);
+            background: #fff;
         }
 
-        /* ─── Article Multi-Select ──────────────────────────────────── */
-        .article-search-wrap {
-            position: relative;
-            margin-bottom: 12px;
-        }
-
-        .article-search-wrap input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 13px;
-            box-sizing: border-box;
-        }
-
-        .article-list {
-            max-height: 260px;
-            overflow-y: auto;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 6px;
-        }
-
-        .article-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 8px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.15s;
-            font-size: 13px;
-        }
-
-        .article-item:hover {
-            background: #f5f7fa;
-        }
-
-        .article-item.selected {
-            background: #fffbf0;
-        }
-
-        .article-item input[type="checkbox"] {
-            margin-top: 2px;
-            accent-color: var(--accent);
-            flex-shrink: 0;
-            width: 15px;
-            height: 15px;
-        }
-
-        .article-item .art-title {
-            font-weight: 600;
-            line-height: 1.3;
-        }
-
-        .article-item .art-section {
-            font-size: 10px;
-            color: var(--accent);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-top: 2px;
-        }
-
-        .selected-count {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 8px;
-        }
-
-        .selected-count strong {
-            color: var(--bg-primary);
-        }
-
-        /* ─── Buttons ───────────────────────────────────────────────── */
-        .btn-primary {
+        .btn-register {
             width: 100%;
             padding: 14px;
             background: var(--bg-primary);
@@ -225,447 +103,217 @@
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            transition: opacity 0.2s;
             margin-top: 8px;
+            transition: background 0.2s, transform 0.1s;
         }
 
-        .btn-primary:hover {
-            opacity: 0.88;
+        .btn-register:hover {
+            background: #2a1760;
+            transform: translateY(-1px);
         }
 
-        .btn-primary:disabled {
-            opacity: 0.5;
+        .btn-register:disabled {
+            background: #b0b8cc;
             cursor: not-allowed;
+            transform: none;
         }
 
-        /* ─── Loading State ─────────────────────────────────────────── */
-        .loading-box {
+        .alert-error {
+            background: #fff0f0;
+            color: #c0392b;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #27ae60;
+            border: 1px solid #b7e4c7;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: none;
+        }
+
+        .login-link {
             text-align: center;
-            padding: 30px 0;
-        }
-
-        .spinner {
-            width: 52px;
-            height: 52px;
-            border: 5px solid #e8edf2;
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .loading-box h3 {
-            font-size: 18px;
-            font-weight: 800;
-            margin-bottom: 8px;
-        }
-
-        .loading-box p {
+            margin-top: 24px;
             font-size: 13px;
             color: var(--text-muted);
         }
 
-        .log-output {
-            background: #0d1117;
-            color: #58a6ff;
-            font-family: monospace;
-            font-size: 12px;
-            padding: 14px;
-            border-radius: 8px;
-            max-height: 160px;
-            overflow-y: auto;
-            margin-top: 16px;
-            text-align: left;
-            white-space: pre-wrap;
-            display: none;
+        .login-link a {
+            color: var(--bg-primary);
+            font-weight: 700;
+            text-decoration: none;
         }
 
-        /* ─── Error / Alert ─────────────────────────────────────────── */
-        .alert-error {
-            background: #fef2f2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-            border-radius: 8px;
-            padding: 12px 14px;
-            font-size: 13px;
-            margin-bottom: 16px;
-            display: none;
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 20px 0;
         }
     </style>
 @endsection
 
 @section('content')
-    <div class="test-page">
-        <div class="test-card">
+    <div class="register-page">
+        <div class="register-card">
+            <div class="register-logo">
+                <img src="{{ asset('img/logo2.svg') }}" alt="ntvnews.id">
+            </div>
+            <div class="register-subtitle">Buat Akun Baru</div>
 
-            <div class="test-logo">ntvnews<span>.id</span></div>
-            <div class="test-subtitle">Demo Inference Model</div>
+            <h2>Daftar Sekarang</h2>
+            <p class="sub">Buat akun dan temukan berita yang relevan untuk Anda.</p>
 
-            <!-- Step Progress -->
-            <div class="step-progress">
-                <div class="step-dot active" id="dot-1">1</div>
-                <div class="step-line" id="line-1"></div>
-                <div class="step-dot" id="dot-2">2</div>
-                <div class="step-line" id="line-2"></div>
-                <div class="step-dot" id="dot-3">3</div>
+            <div class="alert-error" id="err-register"></div>
+            <div class="alert-success" id="success-register"></div>
+
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="reg-username" placeholder="contoh: john_doe" autocomplete="off">
             </div>
 
-            <!-- ═══ STEP 1: Registrasi ═══════════════════════════════════════ -->
-            <div class="step-panel active" id="step-1">
-                <h2 class="step-title">Registrasi User Baru</h2>
-                <p class="step-desc">Buat akun baru untuk menguji pipeline rekomendasi secara end-to-end.</p>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="reg-email" placeholder="email@example.com" autocomplete="off">
+            </div>
 
-                <div class="alert-error" id="err-step1"></div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="reg-password" placeholder="••••••">
+            </div>
 
+            <div class="form-row">
                 <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="reg-username" placeholder="contoh: user_baru" required>
+                    <label>Gender</label>
+                    <select id="reg-gender">
+                        <option value="">-- Pilih --</option>
+                        <option value="male">Laki-laki</option>
+                        <option value="female">Perempuan</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="reg-email" placeholder="user@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="reg-password" placeholder="••••••••" required>
-                </div>
-
-                <button class="btn-primary" id="btn-step1">
-                    Lanjut — Pilih Artikel <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </div>
-
-            <!-- ═══ STEP 2: Pilih Artikel ════════════════════════════════════ -->
-            <div class="step-panel" id="step-2">
-                <h2 class="step-title">Pilih Artikel</h2>
-                <p class="step-desc">Pilih <strong>minimal 2 artikel</strong> yang ingin Anda interaksikan. Ini akan menjadi
-                    data interaksi untuk pelatihan model.</p>
-
-                <div class="alert-error" id="err-step2"></div>
-
-                <div class="article-search-wrap">
-                    <input type="text" id="art-search" placeholder="🔍  Cari judul artikel...">
-                </div>
-
-                <div class="article-list" id="article-list">
-                    <div style="text-align:center; padding:20px; color:#999; font-size:13px;">Memuat artikel...</div>
-                </div>
-
-                <div class="selected-count">Dipilih: <strong id="sel-count">0</strong> artikel (minimal 2)</div>
-
-                <button class="btn-primary" id="btn-step2" disabled>
-                    Mulai Training <i class="fa-solid fa-brain"></i>
-                </button>
-            </div>
-
-            <!-- ═══ STEP 3: Training ══════════════════════════════════════════ -->
-            <div class="step-panel" id="step-3">
-                <div class="loading-box">
-                    <div class="spinner" id="loading-spinner"></div>
-                    <h3>Sedang Melatih Model...</h3>
-                    <p>Proses ini membutuhkan waktu beberapa menit.<br>Mohon jangan tutup halaman ini.</p>
-
-                    <!-- Progress Bar -->
-                    <div style="margin: 30px 0; background: #e8edf2; border-radius: 8px; height: 12px; overflow: hidden; position: relative;">
-                        <div id="progress-bar" style="width: 0%; height: 100%; background: var(--bg-primary); transition: width 0.3s ease;"></div>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <span id="progress-step" style="font-size: 13px; font-weight: 600; color: var(--bg-primary);">Memulai pipeline...</span>
-                        <span id="progress-percent" style="font-size: 14px; font-weight: 800; color: var(--accent);">0%</span>
-                    </div>
-
-                    <p style="margin-top:16px; font-size:11px; color:#bbb;">
-                        Setelah selesai, Anda akan diarahkan ke homepage secara otomatis.
-                    </p>
+                    <label>Usia</label>
+                    <input type="number" id="reg-age" placeholder="25" min="10" max="100">
                 </div>
             </div>
 
+            <button class="btn-register" id="btn-register">
+                Daftar &amp; Lihat Berita <i class="fa-solid fa-arrow-right"></i>
+            </button>
+
+            <div class="login-link">
+                Sudah punya akun? <a href="/login">Masuk di sini</a>
+            </div>
         </div>
     </div>
 @endsection
 
 @section('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btn-register').addEventListener('click', async () => {
+            const errEl = document.getElementById('err-register');
+            const successEl = document.getElementById('success-register');
+            errEl.style.display = 'none';
+            successEl.style.display = 'none';
 
-            // ─── State ────────────────────────────────────────────────────────────
-            let newUserId = null;
-            let allArticles = [];
-            let selectedIds = new Set();
+            const username = document.getElementById('reg-username').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const gender = document.getElementById('reg-gender').value;
+            const age = parseInt(document.getElementById('reg-age').value) || null;
 
-            // ─── Step Navigation ──────────────────────────────────────────────────
-            function goToStep(n) {
-                document.querySelectorAll('.step-panel').forEach((p, i) => {
-                    p.classList.toggle('active', i + 1 === n);
+            if (!username || !email || !password) {
+                errEl.textContent = 'Username, email, dan password wajib diisi!';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            if (password.length < 6) {
+                errEl.textContent = 'Password minimal 6 karakter!';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            const btn = document.getElementById('btn-register');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mendaftar...';
+
+            try {
+                if (!supabaseClient) throw new Error('Koneksi Supabase gagal.');
+
+                // Cek duplikat username/email
+                const { data: existing } = await supabaseClient
+                    .from('users')
+                    .select('user_id')
+                    .or(`username.eq.${username},email.eq.${email}`)
+                    .limit(1)
+                    .maybeSingle();
+
+                if (existing) {
+                    throw new Error('Username atau email sudah terdaftar. Silakan gunakan yang lain.');
+                }
+
+                // Ambil user_id terbesar, lalu +1
+                const { data: maxRow } = await supabaseClient
+                    .from('users')
+                    .select('user_id')
+                    .order('user_id', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                const nextId = maxRow ? (parseInt(maxRow.user_id) + 1) : 1;
+
+                // Insert user baru
+                const { data: newUser, error: insertErr } = await supabaseClient
+                    .from('users')
+                    .insert([{
+                        user_id: nextId,
+                        username: username,
+                        email: email,
+                        password: password,
+                        gender: gender || null,
+                        age: age
+                    }])
+                    .select('user_id')
+                    .single();
+
+                if (insertErr) throw new Error(insertErr.message);
+
+                successEl.textContent = 'Akun berhasil dibuat! Mengalihkan ke halaman berita...';
+                successEl.style.display = 'block';
+
+                // Simpan user_id ke session lewat Laravel
+                await fetch('/register/session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ user_id: newUser.user_id })
                 });
-                // Update dots
-                for (let i = 1; i <= 3; i++) {
-                    const dot = document.getElementById(`dot-${i}`);
-                    const line = document.getElementById(`line-${i}`);
-                    dot.classList.remove('active', 'done');
-                    if (i < n) { dot.classList.add('done'); if (line) line.classList.add('done'); }
-                    if (i === n) dot.classList.add('active');
-                }
+
+                setTimeout(() => {
+                    window.location.href = '/welcome';
+                }, 1200);
+
+            } catch (e) {
+                errEl.textContent = e.message;
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = 'Daftar &amp; Lihat Berita <i class="fa-solid fa-arrow-right"></i>';
             }
-
-            function showError(id, msg) {
-                const el = document.getElementById(id);
-                el.textContent = msg;
-                el.style.display = 'block';
-            }
-            function clearError(id) { document.getElementById(id).style.display = 'none'; }
-
-            // ─── STEP 1: Register via Supabase JS ────────────────────────────────
-            document.getElementById('btn-step1').addEventListener('click', async () => {
-                clearError('err-step1');
-                const username = document.getElementById('reg-username').value.trim();
-                const email = document.getElementById('reg-email').value.trim();
-                const password = document.getElementById('reg-password').value;
-
-                if (!username || !email || !password) {
-                    showError('err-step1', 'Semua field harus diisi!'); return;
-                }
-
-                const btn = document.getElementById('btn-step1');
-                btn.disabled = true;
-                btn.textContent = 'Mendaftar...';
-
-                try {
-                    // Cek apakah user sudah ada berdasarkan email atau username
-                    const { data: existingUser } = await supabaseClient
-                        .from('users')
-                        .select('user_id')
-                        .or(`username.eq.${username},email.eq.${email}`)
-                        .limit(1)
-                        .single();
-
-                    if (existingUser) {
-                        throw new Error("Username dan email tersebut telah dipakai, mohon untuk menggunakan username dan email yang baru.");
-                    } else {
-                        // Karena tabel 'users' di Supabase mungkin tidak memiliki auto-increment,
-                        // kita cari nilai user_id terbesar dulu, lalu +1
-                        const { data: maxData } = await supabaseClient
-                            .from('users')
-                            .select('user_id')
-                            .order('user_id', { ascending: false })
-                            .limit(1)
-                            .single();
-
-                        let nextId = 1;
-                        if (maxData) {
-                            nextId = parseInt(maxData.user_id) + 1;
-                        }
-
-                        // Insert user ke tabel users via Supabase
-                        const { data, error } = await supabaseClient
-                            .from('users')
-                            .insert([{ user_id: nextId, username, email, password }])
-                            .select('user_id')
-                            .single();
-
-                        if (error) throw new Error(error.message);
-                        newUserId = data.user_id;
-                        console.log('[Test] User baru terdaftar, user_id:', newUserId);
-                    }
-
-                    // Load artikel untuk step 2
-                    await loadArticles();
-                    goToStep(2);
-
-                } catch (e) {
-                    showError('err-step1', 'Gagal registrasi: ' + e.message);
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = 'Lanjut — Pilih Artikel <i class="fa-solid fa-arrow-right"></i>';
-                }
-            });
-
-            // ─── STEP 2: Load Artikel ─────────────────────────────────────────────
-            async function loadArticles() {
-                const { data, error } = await supabaseClient
-                    .from('article')
-                    .select('article_id, title, section_id, view_count')
-                    .order('publish_date', { ascending: false });
-
-                if (error || !data) return;
-                allArticles = data;
-                renderArticles(allArticles);
-            }
-
-            function renderArticles(articles) {
-                const list = document.getElementById('article-list');
-                if (!articles.length) {
-                    list.innerHTML = '<div style="text-align:center;padding:20px;color:#999">Artikel tidak ditemukan</div>';
-                    return;
-                }
-                list.innerHTML = articles.map(a => `
-                            <label class="article-item ${selectedIds.has(a.article_id) ? 'selected' : ''}"
-                                   data-id="${a.article_id}">
-                                <input type="checkbox" value="${a.article_id}"
-                                       ${selectedIds.has(a.article_id) ? 'checked' : ''}
-                                       onchange="window.toggleArticle(${a.article_id}, this.checked, this.closest('label'))">
-                                <div style="flex: 1;">
-                                    <div class="art-title">${a.title}</div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                                        <span class="art-section">${window.getSectionName ? window.getSectionName(a.section_id) : a.section_id}</span>
-                                        <span style="font-size: 10px; color: #666; font-weight: bold;"><i class="fa-solid fa-eye"></i> ${a.view_count || 0} views</span>
-                                    </div>
-                                </div>
-                            </label>
-                        `).join('');
-            }
-
-            // Search filter
-            const searchInput = document.getElementById('search-art');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const q = e.target.value.toLowerCase();
-                    const filtered = allArticles.filter(a => a.title.toLowerCase().includes(q));
-                    renderArticles(filtered);
-                });
-            }
-
-            window.toggleArticle = function(id, isChecked, labelEl) {
-                if (isChecked) {
-                    selectedIds.add(id);
-                    labelEl.classList.add('selected');
-                } else {
-                    selectedIds.delete(id);
-                    labelEl.classList.remove('selected');
-                }
-                document.getElementById('sel-count').textContent = selectedIds.size;
-                document.getElementById('btn-step2').disabled = selectedIds.size < 2;
-            };
-
-            // ─── STEP 3: Trigger Training + Poll Progress ───────────────────────
-            document.getElementById('btn-step2').addEventListener('click', async () => {
-                clearError('err-step2');
-                if (selectedIds.size < 2) {
-                    showError('err-step2', 'Pilih minimal 2 artikel!'); return;
-                }
-
-                goToStep(3);
-
-                try {
-                    // 1. Insert interaksi ke Supabase
-                    const { data: maxIntData } = await supabaseClient
-                        .from('user_interaction')
-                        .select('interaction_id')
-                        .order('interaction_id', { ascending: false })
-                        .limit(1)
-                        .single();
-
-                    let nextIntId = 1;
-                    if (maxIntData && maxIntData.interaction_id) {
-                        nextIntId = parseInt(maxIntData.interaction_id) + 1;
-                    }
-
-                    const interactionRows = Array.from(selectedIds).map(artId => ({
-                        interaction_id: nextIntId++,
-                        user_id: newUserId,
-                        article_id: artId
-                    }));
-
-                    const { error: insertErr } = await supabaseClient
-                        .from('user_interaction')
-                        .insert(interactionRows);
-
-                    if (insertErr) {
-                        throw new Error('Gagal insert interaksi: ' + insertErr.message);
-                    }
-
-                    // 2. Trigger training di background menggunakan stream reader
-                    const resp = await fetch('{{ route("register.train") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        },
-                        body: JSON.stringify({ user_id: newUserId }),
-                    });
-
-                    if (!resp.body) throw new Error('ReadableStream tidak didukung browser Anda');
-
-                    const reader = resp.body.getReader();
-                    const decoder = new TextDecoder('utf-8');
-                    let buffer = '';
-
-                    const barEl = document.getElementById('progress-bar');
-                    const pctEl = document.getElementById('progress-percent');
-                    const stepEl = document.getElementById('progress-step');
-
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop(); // simpan baris yang belum lengkap
-
-                        for (const line of lines) {
-                            if (!line.trim()) continue;
-                            try {
-                                const data = JSON.parse(line);
-                                if (data.line) {
-                                    // Deteksi step dari output Python
-                                    if (data.line.includes('[1/5]')) {
-                                        stepEl.textContent = 'Memuat interaksi dari Supabase...';
-                                        barEl.style.width = '10%'; pctEl.textContent = '10%';
-                                    } else if (data.line.includes('[2/5]')) {
-                                        stepEl.textContent = 'Memuat dataset interaksi terbaru...';
-                                        barEl.style.width = '20%'; pctEl.textContent = '20%';
-                                    } else if (data.line.includes('[3/5]')) {
-                                        stepEl.textContent = 'Memperbarui view_count artikel...';
-                                        barEl.style.width = '30%'; pctEl.textContent = '30%';
-                                    } else if (data.line.includes('[4/5]')) {
-                                        stepEl.textContent = 'Menyimpan CSV berversi...';
-                                        barEl.style.width = '40%'; pctEl.textContent = '40%';
-                                    } else if (data.line.includes('[5/5]')) {
-                                        stepEl.textContent = 'Melatih ulang LightGCN...';
-                                        barEl.style.width = '50%'; pctEl.textContent = '50%';
-                                    } else if (data.line.includes('Epoch')) {
-                                        const match = data.line.match(/Epoch\s+(\d+)/);
-                                        if (match) {
-                                            const epoch = parseInt(match[1]);
-                                            // Progress LightGCN dari 50% ke 90%
-                                            const pct = 50 + Math.floor((epoch / 500) * 40);
-                                            barEl.style.width = pct + '%';
-                                            pctEl.textContent = pct + '%';
-                                            stepEl.textContent = 'Melatih LightGCN: Epoch ' + epoch + ' / 500';
-                                        }
-                                    } else if (data.line.includes('[Popularity]')) {
-                                        stepEl.textContent = 'Menghitung Popularity-Based Filtering...';
-                                        barEl.style.width = '95%'; pctEl.textContent = '95%';
-                                    }
-                                } else if (data.success) {
-                                    stepEl.textContent = 'Training selesai!';
-                                    barEl.style.width = '100%'; pctEl.textContent = '100%';
-                                    document.getElementById('loading-spinner').style.display = 'none';
-                                    setTimeout(() => {
-                                        window.location.href = '/homepage';
-                                    }, 1500);
-                                } else if (data.error) {
-                                    stepEl.textContent = 'Error: ' + data.error;
-                                    document.getElementById('loading-spinner').style.borderColor = 'red';
-                                }
-                            } catch (e) {
-                                // Bukan JSON (misal jika ada output unexpected)
-                            }
-                        }
-                    }
-
-                } catch (e) {
-                    document.getElementById('progress-step').textContent = 'Error: ' + e.message;
-                }
-            });
-
         });
     </script>
 @endsection
