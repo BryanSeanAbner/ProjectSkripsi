@@ -329,7 +329,7 @@
 
                     if (articles) {
                         let html = '';
-                        // Looping sesuai urutan di similarityData agar rank/posisi terjaga
+                        // Looping sesuai urutan di similarity data agar rank/posisi sesuai
                         similarityData.forEach(sim => {
                             const articleData = articles.find(a => a.article_id === sim.similar_article_id);
                             if (!articleData) return;
@@ -339,7 +339,8 @@
                                 <div style="position:relative;">
                                     <img src="${articleData.photo_url || 'https://via.placeholder.com/400x250?text=Serupa'}" alt="Similar">
                                     <div class="cbf-tag">${window.getSectionName ? window.getSectionName(articleData.section_id) : articleData.section_id}</div>
-                                    <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; 
+                                    padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
                                         <i class="fa-regular fa-eye"></i> ${articleData.view_count || 0}
                                     </div>
                                 </div>

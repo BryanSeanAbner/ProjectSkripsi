@@ -28,9 +28,7 @@ def main():
 
 
 def generate_for_user(user_id: int):
-    print(f"\n{'='*50}")
     print(f" Generating recommendations for user_id = {user_id}")
-    print(f"{'='*50}\n")
 
     # 1. Popularity
     print(">>> [1/3] Popularity-Based Filtering...")

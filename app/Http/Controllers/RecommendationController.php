@@ -12,10 +12,6 @@ use Illuminate\Support\Facades\Auth;
 
 class RecommendationController extends Controller
 {
-    /**
-     * Dashboard utama — tampilkan hasil rekomendasi user yang sudah ada.
-     * Halaman ini akan diupdate secara real-time oleh Supabase JS client.
-     */
     public function index()
     {
         $user   = Auth::user();
@@ -28,7 +24,6 @@ class RecommendationController extends Controller
             ->get();
 
         // CBF — Article Similarity
-        // Ambil artikel yang pernah dibaca user untuk dapat referensi article_id-nya
         $userReadArticleIds = \DB::table('user_interaction')
             ->where('user_id', $userId)
             ->pluck('article_id');

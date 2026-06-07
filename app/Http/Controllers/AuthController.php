@@ -45,9 +45,9 @@ class AuthController extends Controller
                     // Cek apakah password cocok (Plain Text atau Bcrypt Hash)
                     $passwordMatches = false;
                     if ($storedPassword === $inputPassword) {
-                        $passwordMatches = true; // User baru dari /register (plain text)
+                        $passwordMatches = true; 
                     } elseif (\Illuminate\Support\Facades\Hash::check($inputPassword, $storedPassword)) {
-                        $passwordMatches = true; // User dari dataset original (bcrypt)
+                        $passwordMatches = true; 
                     }
 
                     if ($passwordMatches) {

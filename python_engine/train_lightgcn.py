@@ -1,6 +1,5 @@
 """
 LightGCN Model — implementasi dengan PyTorch Geometric
-────────────────────────────────────────────────────────
 Training menggunakan FULL interactions (acu_interactions_customized5.csv).
 Internal 90/10 train/val split hanya untuk monitoring BPR loss.
 
@@ -25,12 +24,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import INTERACTIONS_CSV, SAVED_MODELS_DIR, TOP_K
 from db_client import supabase_client
 
-# ─── Config ───────────────────────────────────────────────────────────────────
+# Config 
 LGCN_WEIGHTS_PATH  = os.path.join(SAVED_MODELS_DIR, "best_model.pt")
 LGCN_MAPPINGS_PATH = os.path.join(SAVED_MODELS_DIR, "lightgcn_mappings.pkl")
 
-# Hyperparameters (sesuai notebook Colab user)
-EMB_DIM      = 8
+# Hyperparameters 
+EMB_DIM      = 64
 N_LAYERS     = 3
 EPOCHS       = 500
 STEPS        = 10
@@ -40,7 +39,7 @@ WEIGHT_DECAY = 1e-4
 SEED         = 42
 DROPOUT      = 0.5
 GAMMA        = 0.1
-MAX_PER_ITEM = 40
+MAX_PER_ITEM = 60
 ALPHA        = 0.8
 
 device = torch.device("cpu")

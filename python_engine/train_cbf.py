@@ -57,20 +57,13 @@ def remove_stopwords(text):
 def full_preprocess(text):
     return remove_stopwords(preprocess(text))
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 #  1. TRAINING
-# ══════════════════════════════════════════════════════════════════════════════
 
 def train() -> None:
     """Latih TF-IDF dan simpan similarity matrix ke disk."""
     print("[CBF] Memuat artikel dari CSV (article_dataset5.csv)...")
     df = pd.read_csv(ARTICLE_CSV)
     df = df.reset_index(drop=True)
-    # Gunakan aslinya atau sesuaikan reset
-    # di notebook user: df["article_id"] = df.index + 1
-    # tapi kita pakai article_id yang konsisten di CSV untuk join dengan interaksi
-
     print("[CBF] Preprocessing teks (menghapus stopwords & karakter khusus)...")
     df["clean_title"]   = df["title"].apply(full_preprocess)
     df["clean_content"] = df["content"].apply(full_preprocess)
@@ -90,15 +83,12 @@ def train() -> None:
     print(f"[CBF] Model tersimpan di {SAVED_MODELS_DIR}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 #  2. INFERENCE
-# ══════════════════════════════════════════════════════════════════════════════
 
 def _load_model():
     with open(CBF_MATRIX_PATH,  "rb") as f: cosine_sim = pickle.load(f)
     with open(ARTICLE_INFO_PATH, "rb") as f: df = pickle.load(f)
     return cosine_sim, df
-
 
 def _get_user_history(user_id: int) -> list[int]:
     """Ambil daftar article_id yang pernah diinteraksikan user dari interactions."""
