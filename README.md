@@ -1,58 +1,111 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Rekomendasi Berita Anti-FOMO
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Prototipe aplikasi web berita dengan sistem rekomendasi berbasis **Laravel 13**, **Supabase**, dan **Python (LightGCN + CBF + Popularity)**.
 
-## About Laravel
+## Persyaratan
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Software | Versi |
+|----------|-------|
+| PHP | 8.3+ |
+| Composer | 2.x |
+| Python | 3.11+ (opsional, untuk generate rekomendasi saat login) |
+| Ekstensi PHP | `sqlite3`, `openssl`, `mbstring`, `curl` |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Laragon di Windows sudah memenuhi persyaratan di atas.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Setup Cepat (Setelah Git Clone)
 
-## Learning Laravel
+### Windows (PowerShell / Laragon)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```powershell
+.\setup.ps1
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Linux / macOS
 
-## Contributing
+```bash
+chmod +x setup.sh
+./setup.sh
+php artisan serve
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Manual
 
-## Code of Conduct
+```bash
+composer install
+php artisan project:setup
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Buka browser: **http://127.0.0.1:8000**
 
-## Security Vulnerabilities
+## Login Demo
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Database Supabase **shared** sudah berisi data demo. Gunakan akun berikut:
 
-## License
+| Email | Password | Keterangan |
+|-------|----------|------------|
+| `1@gmail.com` s/d `20@gmail.com` | `1` | User warm-start (sudah punya rekomendasi personal) |
+| Daftar via `/register` | bebas | User cold-start (rekomendasi popularitas) |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Arsitektur Singkat
+
+```
+Browser (Blade + Supabase JS) ──► Supabase Cloud (data utama)
+Laravel (Auth, routing, session) ──► Supabase REST API
+Python Engine ──► Training & generate rekomendasi ──► Supabase
+SQLite lokal ──► Session, cache, queue Laravel saja
+```
+
+## File Penting
+
+| File / Folder | Fungsi |
+|---------------|--------|
+| `.env.example` | Template konfigurasi (Supabase URL & key sudah terisi) |
+| `python_engine/config.py` | Kredensial Supabase untuk script Python |
+| `python_engine/reset_and_retrain.py` | Reset + seed + training ulang |
+| `article_dataset.csv` | Dataset artikel |
+| `acu_interactions.csv` | Dataset interaksi user-artikel |
+| `python_engine/saved_models/` | Model ML yang sudah dilatih |
+
+## Reset Database Supabase (Opsional)
+
+Jika ingin mengisi ulang data dari CSV dan training model:
+
+```bash
+cd python_engine
+pip install -r requirements.txt
+python reset_and_retrain.py --full
+```
+
+Proses ini memakan waktu ~10–30 menit tergantung spesifikasi laptop.
+
+## Perintah Artisan Berguna
+
+```bash
+php artisan serve              # Jalankan web server
+php artisan project:setup      # Setup pertama kali
+php artisan models:train       # Training ulang semua model ML
+```
+
+## Troubleshooting
+
+**Halaman kosong / error Supabase**
+- Pastikan `.env` ada dan berisi `SUPABASE_URL` + `SUPABASE_SERVICE_KEY`
+- Jalankan `php artisan config:clear`
+
+**Login gagal "Gagal menghubungi server database"**
+- Periksa koneksi internet (Supabase adalah cloud database)
+- Pastikan kredensial Supabase di `.env` benar
+
+**Rekomendasi tidak muncul setelah login**
+- Install Python: `pip install -r python_engine/requirements.txt`
+- Atau login sebagai user demo `1@gmail.com` (rekomendasi sudah ada di Supabase)
+
+**Error SQLite / session**
+- Jalankan ulang: `php artisan project:setup`
+
+## Lisensi
+
+MIT — Proyek Tugas Akhir.
