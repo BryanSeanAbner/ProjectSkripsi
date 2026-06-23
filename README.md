@@ -1,4 +1,4 @@
-# Sistem Rekomendasi Berita Anti-FOMO
+# Sistem Rekomendasi Berita Anti-FOMO pada Situs ntvnews.com
 
 Prototipe aplikasi web berita dengan sistem rekomendasi berbasis **Laravel 13**, **Supabase**, dan **Python (LightGCN + CBF + Popularity)**.
 
@@ -108,4 +108,4 @@ php artisan models:train       # Training ulang semua model ML
 
 ## Lisensi
 
-MIT — Proyek Tugas Akhir.
+MIT — Proyek Tugas Akhir (Skripsi)
